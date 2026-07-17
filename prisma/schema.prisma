@@ -109,3 +109,60 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+// --- Core master data ---
+
+enum ProductType {
+  FINISHED_GOOD
+  RAW_MATERIAL
+  PACKAGING
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DISCONTINUED
+}
+
+model Product {
+  id           String        @id @default(cuid())
+  sku          String        @unique
+  name         String
+  description  String?
+  type         ProductType   @default(FINISHED_GOOD)
+  uom          String
+  status       ProductStatus @default(ACTIVE)
+  costPrice    Decimal?      @db.Decimal(14, 4)
+  sellPrice    Decimal?      @db.Decimal(14, 4)
+  reorderPoint Decimal?      @db.Decimal(14, 4)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Customer {
+  id              String   @id @default(cuid())
+  name            String
+  code            String?  @unique
+  email           String?
+  phone           String?
+  billingAddress  String?
+  shippingAddress String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Its own table (not a text field) so Phase 2 can promote it to a full
+// Suppliers module without a schema migration/rename. Full CRUD UI for this
+// lands alongside Purchase Orders (M3); the model exists from M2.
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  code      String?  @unique
+  email     String?
+  phone     String?
+  address   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

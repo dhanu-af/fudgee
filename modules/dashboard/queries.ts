@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { MODULE_REGISTRY } from "@/lib/registry/modules";
+import { getStockLevels } from "@/modules/inventory/queries";
 
 const BUILT_MODULE_KEYS = new Set([
   "dashboard",
@@ -7,6 +8,7 @@ const BUILT_MODULE_KEYS = new Set([
   "customers",
   "users",
   "warehouse",
+  "inventory",
 ]);
 
 export async function getDashboardData() {
@@ -81,11 +83,18 @@ export async function getDashboardData() {
   const builtModules = MODULE_REGISTRY.filter((m) => BUILT_MODULE_KEYS.has(m.key)).length;
   const totalModules = MODULE_REGISTRY.length;
 
+  const stockLevels = await getStockLevels();
+  const inventorySummary = {
+    skuLocationCount: stockLevels.length,
+    totalUnitsOnHand: stockLevels.reduce((sum, row) => sum + Math.max(row.onHand, 0), 0),
+  };
+
   return {
     kpis: { productCount, customerCount, activeUserCount },
     productTypeChart,
     activityChart: days,
     activity,
     buildProgress: { built: builtModules, total: totalModules },
+    inventorySummary,
   };
 }

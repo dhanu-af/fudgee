@@ -12,6 +12,7 @@ const BUILT_MODULE_KEYS = new Set([
   "sales_orders",
   "purchase_orders",
   "production",
+  "quality",
 ]);
 
 export async function getDashboardData() {
@@ -98,6 +99,19 @@ export async function getDashboardData() {
   ]);
   const productionSummary = { activeBatchCount, completedBatchCount };
 
+  const [passCount, failCount, pendingCount] = await Promise.all([
+    db.qualityCheck.count({ where: { result: "PASS" } }),
+    db.qualityCheck.count({ where: { result: "FAIL" } }),
+    db.qualityCheck.count({ where: { result: "PENDING" } }),
+  ]);
+  const totalChecks = passCount + failCount + pendingCount;
+  const qualitySummary = {
+    passCount,
+    failCount,
+    pendingCount,
+    passRate: totalChecks > 0 ? Math.round((passCount / totalChecks) * 100) : null,
+  };
+
   return {
     kpis: { productCount, customerCount, activeUserCount },
     productTypeChart,
@@ -106,5 +120,6 @@ export async function getDashboardData() {
     buildProgress: { built: builtModules, total: totalModules },
     inventorySummary,
     productionSummary,
+    qualitySummary,
   };
 }

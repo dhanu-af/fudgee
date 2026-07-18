@@ -1,11 +1,11 @@
-import { Package, Users as UsersIcon, UserCog, Rocket, FlaskConical, Activity } from "lucide-react";
+import { Package, Users as UsersIcon, UserCog, Rocket, Activity } from "lucide-react";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS, ROLE_LABELS } from "@/lib/rbac/permissions";
 import { getDashboardData } from "@/modules/dashboard/queries";
 import { StatTile } from "@/modules/dashboard/components/stat-tile";
-import { ComingSoonCard } from "@/modules/dashboard/components/coming-soon-card";
 import { InventorySummaryCard } from "@/modules/inventory/components/inventory-summary-card";
 import { ProductionOverviewCard } from "@/modules/production/components/production-overview-card";
+import { QualitySummaryCard } from "@/modules/quality/components/quality-summary-card";
 import { ActivityTimeline } from "@/modules/dashboard/components/activity-timeline";
 import { BatchLookupCard } from "@/modules/dashboard/components/batch-lookup-card";
 import { ProductTypeChart } from "@/modules/dashboard/components/product-type-chart";
@@ -98,7 +98,12 @@ export default async function DashboardPage() {
           />
         </FadeIn>
         <FadeIn delay={0.5}>
-          <ComingSoonCard title="Quality Control Summary" icon={FlaskConical} milestone="M5" />
+          <QualitySummaryCard
+            passRate={data.qualitySummary.passRate}
+            passCount={data.qualitySummary.passCount}
+            failCount={data.qualitySummary.failCount}
+            pendingCount={data.qualitySummary.pendingCount}
+          />
         </FadeIn>
       </div>
 

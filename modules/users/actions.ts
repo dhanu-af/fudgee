@@ -24,6 +24,7 @@ export async function createUser(_prev: UserFormState, formData: FormData): Prom
     await db.user.create({
       data: {
         name: parsed.data.name,
+        username: parsed.data.username,
         email: parsed.data.email,
         roleId: parsed.data.roleId,
         passwordHash,
@@ -31,7 +32,7 @@ export async function createUser(_prev: UserFormState, formData: FormData): Prom
       },
     });
   } catch {
-    return { error: "A user with that email already exists." };
+    return { error: "A user with that User ID or email already exists." };
   }
 
   revalidatePath("/users");
@@ -47,6 +48,7 @@ export async function updateUser(
 
   const parsed = updateUserSchema.safeParse({
     name: formData.get("name"),
+    username: formData.get("username"),
     roleId: formData.get("roleId"),
     isActive: formData.get("isActive") === "on",
   });
@@ -54,7 +56,11 @@ export async function updateUser(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  await db.user.update({ where: { id }, data: parsed.data });
+  try {
+    await db.user.update({ where: { id }, data: parsed.data });
+  } catch {
+    return { error: "A user with that User ID already exists." };
+  }
 
   revalidatePath("/users");
   redirect("/users");

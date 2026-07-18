@@ -26,6 +26,11 @@ export function UserCreateForm({ roles }: { roles: Role[] }) {
         <Input id="name" name="name" required />
       </div>
       <div className="flex flex-col gap-2">
+        <Label htmlFor="username">User ID</Label>
+        <Input id="username" name="username" type="text" required minLength={2} />
+        <p className="text-xs text-muted-foreground">Used to sign in instead of an email address.</p>
+      </div>
+      <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" required />
       </div>

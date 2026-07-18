@@ -11,14 +11,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   providers: [
     Credentials({
-      credentials: { email: {}, password: {} },
+      credentials: { username: {}, password: {} },
       authorize: async (credentials) => {
-        const email = credentials?.email as string | undefined;
+        const username = credentials?.username as string | undefined;
         const password = credentials?.password as string | undefined;
-        if (!email || !password) return null;
+        if (!username || !password) return null;
 
         const user = await db.user.findUnique({
-          where: { email },
+          where: { username },
           include: { role: { include: { permissions: { include: { permission: true } } } } },
         });
         if (!user || !user.isActive || !user.passwordHash) return null;

@@ -15,7 +15,14 @@ import {
 import type { UserFormState } from "@/modules/users/actions";
 
 type Role = { id: string; key: string; name: string };
-type UserWithRole = { id: string; name: string; email: string; isActive: boolean; roleId: string };
+type UserWithRole = {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  isActive: boolean;
+  roleId: string;
+};
 
 export function UserEditForm({
   action,
@@ -33,6 +40,10 @@ export function UserEditForm({
       <div className="flex flex-col gap-2">
         <Label htmlFor="name">Name</Label>
         <Input id="name" name="name" required defaultValue={user.name} />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="username">User ID</Label>
+        <Input id="username" name="username" required minLength={2} defaultValue={user.username} />
       </div>
       <div className="flex flex-col gap-2">
         <Label>Email</Label>

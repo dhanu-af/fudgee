@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 export type UserRow = {
   id: string;
   name: string;
+  username: string;
   email: string;
   isActive: boolean;
   role: { name: string };
@@ -22,6 +23,7 @@ export const userColumns: ColumnDef<UserRow>[] = [
       </Link>
     ),
   },
+  { accessorKey: "username", header: "User ID" },
   { accessorKey: "email", header: "Email" },
   {
     id: "role",

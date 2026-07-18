@@ -48,6 +48,7 @@ async function main() {
       where: { email: `${roleKey}@fudgee.test` },
       update: { roleId: role.id },
       create: {
+        username: roleKey,
         email: `${roleKey}@fudgee.test`,
         name: ROLE_LABELS[roleKey] ?? roleKey,
         passwordHash,

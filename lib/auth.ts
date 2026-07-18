@@ -32,6 +32,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           roleKey: user.role.key,
           permissions: user.role.permissions.map((rp) => rp.permission.key),
+          mustChangePassword: user.mustChangePassword,
         };
       },
     }),
@@ -42,6 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.roleKey = user.roleKey;
         token.permissions = user.permissions;
+        token.mustChangePassword = user.mustChangePassword;
       }
       return token;
     },
@@ -49,6 +51,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.id = token.sub!;
       session.user.roleKey = token.roleKey;
       session.user.permissions = token.permissions;
+      session.user.mustChangePassword = token.mustChangePassword;
       return session;
     },
   },

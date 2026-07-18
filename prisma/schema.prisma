@@ -58,19 +58,20 @@ model RolePermission {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  isActive      Boolean   @default(true)
-  roleId        String
-  role          Role      @relation(fields: [roleId], references: [id])
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                 String    @id @default(cuid())
+  name               String
+  email              String    @unique
+  emailVerified      DateTime?
+  image              String?
+  passwordHash       String?
+  isActive           Boolean   @default(true)
+  mustChangePassword Boolean   @default(false)
+  roleId             String
+  role               Role      @relation(fields: [roleId], references: [id])
+  accounts           Account[]
+  sessions           Session[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([roleId])
 }

@@ -8,12 +8,14 @@ declare module "@auth/core/types" {
       id: string;
       roleKey: string;
       permissions: string[];
+      mustChangePassword: boolean;
     } & DefaultSession["user"];
   }
 
   interface User {
     roleKey: string;
     permissions: string[];
+    mustChangePassword: boolean;
   }
 }
 
@@ -21,5 +23,6 @@ declare module "@auth/core/jwt" {
   interface JWT {
     roleKey: string;
     permissions: string[];
+    mustChangePassword: boolean;
   }
 }

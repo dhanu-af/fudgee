@@ -58,21 +58,23 @@ model RolePermission {
 }
 
 model User {
-  id                 String    @id @default(cuid())
-  name               String
-  username           String    @unique
-  email              String    @unique
-  emailVerified      DateTime?
-  image              String?
-  passwordHash       String?
-  isActive           Boolean   @default(true)
-  mustChangePassword Boolean   @default(false)
-  roleId             String
-  role               Role      @relation(fields: [roleId], references: [id])
-  accounts           Account[]
-  sessions           Session[]
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                    String                 @id @default(cuid())
+  name                  String
+  username              String                 @unique
+  email                 String                 @unique
+  emailVerified         DateTime?
+  image                 String?
+  passwordHash          String?
+  isActive              Boolean                @default(true)
+  mustChangePassword    Boolean                @default(false)
+  roleId                String
+  role                  Role                   @relation(fields: [roleId], references: [id])
+  accounts              Account[]
+  sessions              Session[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  inventoryTransactions InventoryTransaction[]
+  qualityChecks         QualityCheck[]
 
   @@index([roleId])
 }
@@ -127,44 +129,218 @@ enum ProductStatus {
 }
 
 model Product {
-  id           String        @id @default(cuid())
-  sku          String        @unique
-  name         String
-  description  String?
-  type         ProductType   @default(FINISHED_GOOD)
-  uom          String
-  status       ProductStatus @default(ACTIVE)
-  costPrice    Decimal?      @db.Decimal(14, 4)
-  sellPrice    Decimal?      @db.Decimal(14, 4)
-  reorderPoint Decimal?      @db.Decimal(14, 4)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                    String                 @id @default(cuid())
+  sku                   String                 @unique
+  name                  String
+  description           String?
+  type                  ProductType            @default(FINISHED_GOOD)
+  uom                   String
+  status                ProductStatus          @default(ACTIVE)
+  costPrice             Decimal?               @db.Decimal(14, 4)
+  sellPrice             Decimal?               @db.Decimal(14, 4)
+  reorderPoint          Decimal?               @db.Decimal(14, 4)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  purchaseOrderLines    PurchaseOrderLine[]
+  salesOrderLines       SalesOrderLine[]
+  inventoryTransactions InventoryTransaction[]
+  productionBatches     ProductionBatch[]
+  batchInputUsages      ProductionBatchInput[]
 }
 
 model Customer {
-  id              String   @id @default(cuid())
+  id              String       @id @default(cuid())
   name            String
-  code            String?  @unique
+  code            String?      @unique
   email           String?
   phone           String?
   billingAddress  String?
   shippingAddress String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  salesOrders     SalesOrder[]
 }
 
 // Its own table (not a text field) so Phase 2 can promote it to a full
 // Suppliers module without a schema migration/rename. Full CRUD UI for this
 // lands alongside Purchase Orders (M3); the model exists from M2.
 model Supplier {
-  id        String   @id @default(cuid())
-  name      String
-  code      String?  @unique
-  email     String?
-  phone     String?
-  address   String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String          @id @default(cuid())
+  name           String
+  code           String?         @unique
+  email          String?
+  phone          String?
+  address        String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  purchaseOrders PurchaseOrder[]
+}
+
+// --- Warehouse & Inventory (M4) ---
+
+model Location {
+  id                    String                 @id @default(cuid())
+  name                  String
+  code                  String?                @unique
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  inventoryTransactions InventoryTransaction[]
+}
+
+enum InventoryTransactionType {
+  RECEIPT
+  ISSUE
+  ADJUSTMENT
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+// A ledger, not a mutable balance table — current stock is computed via
+// groupBy/sum over this table rather than kept in sync with a second write
+// path. referenceType/referenceId are loose string pointers back to the
+// PO/SO/batch that caused the movement (no FK, keeps this table decoupled).
+model InventoryTransaction {
+  id              String                   @id @default(cuid())
+  productId       String
+  locationId      String
+  type            InventoryTransactionType
+  quantity        Decimal                  @db.Decimal(14, 4)
+  note            String?
+  referenceType   String?
+  referenceId     String?
+  createdByUserId String?
+  createdAt       DateTime                 @default(now())
+  product         Product                  @relation(fields: [productId], references: [id])
+  location        Location                 @relation(fields: [locationId], references: [id])
+  createdByUser   User?                    @relation(fields: [createdByUserId], references: [id])
+
+  @@index([productId, locationId])
+}
+
+// --- Purchase Orders (M3) ---
+
+enum PurchaseOrderStatus {
+  DRAFT
+  SENT
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id           String              @id @default(cuid())
+  seq          Int                 @default(autoincrement())
+  supplierId   String
+  status       PurchaseOrderStatus @default(DRAFT)
+  orderDate    DateTime            @default(now())
+  expectedDate DateTime?
+  notes        String?
+  subtotal     Decimal             @db.Decimal(14, 4)
+  total        Decimal             @db.Decimal(14, 4)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  supplier     Supplier            @relation(fields: [supplierId], references: [id])
+  lines        PurchaseOrderLine[]
+}
+
+model PurchaseOrderLine {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  productId       String
+  quantity        Decimal       @db.Decimal(14, 4)
+  unitCost        Decimal       @db.Decimal(14, 4)
+  lineTotal       Decimal       @db.Decimal(14, 4)
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id])
+}
+
+// --- Sales Orders (M3) ---
+
+enum SalesOrderStatus {
+  DRAFT
+  CONFIRMED
+  FULFILLED
+  CANCELLED
+}
+
+model SalesOrder {
+  id            String           @id @default(cuid())
+  seq           Int              @default(autoincrement())
+  customerId    String
+  status        SalesOrderStatus @default(DRAFT)
+  orderDate     DateTime         @default(now())
+  requestedDate DateTime?
+  notes         String?
+  subtotal      Decimal          @db.Decimal(14, 4)
+  total         Decimal          @db.Decimal(14, 4)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  customer      Customer         @relation(fields: [customerId], references: [id])
+  lines         SalesOrderLine[]
+}
+
+model SalesOrderLine {
+  id           String     @id @default(cuid())
+  salesOrderId String
+  productId    String
+  quantity     Decimal    @db.Decimal(14, 4)
+  unitPrice    Decimal    @db.Decimal(14, 4)
+  lineTotal    Decimal    @db.Decimal(14, 4)
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id])
+}
+
+// --- Production & Quality Control (M5) ---
+
+enum ProductionBatchStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model ProductionBatch {
+  id              String                 @id @default(cuid())
+  seq             Int                    @default(autoincrement())
+  productId       String
+  quantityPlanned Decimal                @db.Decimal(14, 4)
+  quantityActual  Decimal?               @db.Decimal(14, 4)
+  status          ProductionBatchStatus  @default(PLANNED)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  notes           String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  product         Product                @relation(fields: [productId], references: [id])
+  inputs          ProductionBatchInput[]
+  qualityChecks   QualityCheck[]
+}
+
+model ProductionBatchInput {
+  id                String          @id @default(cuid())
+  productionBatchId String
+  productId         String
+  quantity          Decimal         @db.Decimal(14, 4)
+  productionBatch   ProductionBatch @relation(fields: [productionBatchId], references: [id], onDelete: Cascade)
+  product           Product         @relation(fields: [productId], references: [id])
+}
+
+enum QualityResult {
+  PASS
+  FAIL
+  PENDING
+}
+
+model QualityCheck {
+  id                String          @id @default(cuid())
+  productionBatchId String
+  result            QualityResult   @default(PENDING)
+  checkedAt         DateTime?
+  checkedByUserId   String?
+  notes             String?
+  createdAt         DateTime        @default(now())
+  productionBatch   ProductionBatch @relation(fields: [productionBatchId], references: [id], onDelete: Cascade)
+  checkedByUser     User?           @relation(fields: [checkedByUserId], references: [id])
 }

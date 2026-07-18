@@ -6,6 +6,7 @@ const BUILT_MODULE_KEYS = new Set([
   "products",
   "customers",
   "users",
+  "warehouse",
 ]);
 
 export async function getDashboardData() {

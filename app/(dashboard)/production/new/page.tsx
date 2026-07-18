@@ -1,11 +1,32 @@
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { getFinishedGoodOptions, getRawMaterialOptions } from "@/modules/production/queries";
+import { getRecipeById } from "@/modules/recipes/queries";
 import { ProductionBatchForm } from "@/modules/production/components/production-batch-form";
 
-export default async function NewProductionBatchPage() {
+export default async function NewProductionBatchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ recipeId?: string; quantity?: string }>;
+}) {
   await requirePermission(PERMISSIONS.PRODUCTION_WRITE);
+  const { recipeId, quantity } = await searchParams;
   const [finishedGoods, rawMaterials] = await Promise.all([getFinishedGoodOptions(), getRawMaterialOptions()]);
+
+  let initialProductId: string | undefined;
+  let initialInputs: { productId: string; quantity: string }[] | undefined;
+
+  if (recipeId) {
+    const recipe = await getRecipeById(recipeId);
+    if (recipe) {
+      initialProductId = recipe.productId;
+      const qty = Number(quantity) || 0;
+      initialInputs = recipe.lines.map((l) => ({
+        productId: l.productId,
+        quantity: String(Number(l.quantityPerUnit) * qty),
+      }));
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -19,6 +40,9 @@ export default async function NewProductionBatchPage() {
         <ProductionBatchForm
           finishedGoods={finishedGoods.map((p) => ({ id: p.id, label: `${p.name} (${p.sku})` }))}
           rawMaterials={rawMaterials.map((p) => ({ id: p.id, label: `${p.name} (${p.sku})` }))}
+          initialProductId={initialProductId}
+          initialQuantityPlanned={quantity}
+          initialInputs={initialInputs}
         />
       )}
     </div>

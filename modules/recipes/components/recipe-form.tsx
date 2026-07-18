@@ -13,57 +13,68 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createProductionBatch, type ProductionBatchFormState } from "@/modules/production/actions";
+import type { RecipeFormState } from "@/modules/recipes/actions";
 
 type Option = { id: string; label: string };
-type InputLine = { productId: string; quantity: string };
+type Line = { productId: string; quantityPerUnit: string };
 
-export function ProductionBatchForm({
+type ExistingRecipe = {
+  id: string;
+  name: string | null;
+  notes: string | null;
+  product: { id: string; name: string; sku: string };
+  lines: { productId: string; quantityPerUnit: unknown }[];
+};
+
+export function RecipeForm({
+  action,
   finishedGoods,
   rawMaterials,
-  initialProductId,
-  initialQuantityPlanned,
-  initialInputs,
+  recipe,
 }: {
+  action: (prev: RecipeFormState, formData: FormData) => Promise<RecipeFormState>;
   finishedGoods: Option[];
   rawMaterials: Option[];
-  initialProductId?: string;
-  initialQuantityPlanned?: string;
-  initialInputs?: InputLine[];
+  recipe?: ExistingRecipe;
 }) {
-  const [state, formAction, pending] = useActionState<ProductionBatchFormState, FormData>(createProductionBatch, {});
-  const [inputs, setInputs] = useState<InputLine[]>(
-    initialInputs && initialInputs.length > 0
-      ? initialInputs
-      : [{ productId: rawMaterials[0]?.id ?? "", quantity: "1" }]
+  const [state, formAction, pending] = useActionState<RecipeFormState, FormData>(action, {});
+  const [lines, setLines] = useState<Line[]>(
+    recipe && recipe.lines.length > 0
+      ? recipe.lines.map((l) => ({ productId: l.productId, quantityPerUnit: String(l.quantityPerUnit) }))
+      : [{ productId: rawMaterials[0]?.id ?? "", quantityPerUnit: "1" }]
   );
 
-  function addInput() {
-    setInputs((prev) => [...prev, { productId: rawMaterials[0]?.id ?? "", quantity: "1" }]);
+  function addLine() {
+    setLines((prev) => [...prev, { productId: rawMaterials[0]?.id ?? "", quantityPerUnit: "1" }]);
   }
 
-  function removeInput(index: number) {
-    setInputs((prev) => prev.filter((_, i) => i !== index));
+  function removeLine(index: number) {
+    setLines((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function updateInput(index: number, patch: Partial<InputLine>) {
-    setInputs((prev) => prev.map((input, i) => (i === index ? { ...input, ...patch } : input)));
+  function updateLine(index: number, patch: Partial<Line>) {
+    setLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)));
   }
 
-  const inputsForSubmit = inputs
-    .filter((i) => i.productId)
-    .map((i) => ({ productId: i.productId, quantity: Number(i.quantity) || 0 }));
+  const linesForSubmit = lines
+    .filter((l) => l.productId)
+    .map((l) => ({ productId: l.productId, quantityPerUnit: Number(l.quantityPerUnit) || 0 }));
 
   return (
     <form action={formAction} className="flex max-w-2xl flex-col gap-4">
-      <input type="hidden" name="inputsJson" value={JSON.stringify(inputsForSubmit)} />
+      <input type="hidden" name="linesJson" value={JSON.stringify(linesForSubmit)} />
 
-      <div className="grid grid-cols-2 gap-4">
+      {recipe ? (
+        <div className="flex flex-col gap-2">
+          <Label>Finished good</Label>
+          <p className="text-sm">{`${recipe.product.name} (${recipe.product.sku})`}</p>
+        </div>
+      ) : (
         <div className="flex flex-col gap-2">
           <Label htmlFor="productId">Finished good</Label>
           <Select
             name="productId"
-            defaultValue={initialProductId ?? finishedGoods[0]?.id}
+            defaultValue={finishedGoods[0]?.id}
             items={Object.fromEntries(finishedGoods.map((p) => [p.id, p.label]))}
           >
             <SelectTrigger id="productId">
@@ -78,35 +89,28 @@ export function ProductionBatchForm({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="quantityPlanned">Planned quantity</Label>
-          <Input
-            id="quantityPlanned"
-            name="quantityPlanned"
-            type="number"
-            step="0.01"
-            min="0"
-            required
-            defaultValue={initialQuantityPlanned ?? "1"}
-          />
-        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="name">Recipe name</Label>
+        <Input id="name" name="name" placeholder="e.g. Standard recipe" defaultValue={recipe?.name ?? ""} />
       </div>
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="notes">Notes</Label>
-        <Textarea id="notes" name="notes" />
+        <Textarea id="notes" name="notes" defaultValue={recipe?.notes ?? ""} />
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label>Raw material inputs</Label>
+        <Label>Ingredients (quantity per one unit)</Label>
         <div className="flex flex-col gap-2 rounded-lg border border-border/60 p-3">
-          {inputs.map((input, index) => (
+          {lines.map((line, index) => (
             <div key={index} className="grid grid-cols-[1fr_120px_auto] items-end gap-2">
               <div className="flex flex-col gap-1">
                 {index === 0 && <span className="text-xs text-muted-foreground">Raw material</span>}
                 <Select
-                  value={input.productId}
-                  onValueChange={(value) => updateInput(index, { productId: value ?? "" })}
+                  value={line.productId}
+                  onValueChange={(value) => updateLine(index, { productId: value ?? "" })}
                   items={Object.fromEntries(rawMaterials.map((p) => [p.id, p.label]))}
                 >
                   <SelectTrigger>
@@ -122,27 +126,27 @@ export function ProductionBatchForm({
                 </Select>
               </div>
               <div className="flex flex-col gap-1">
-                {index === 0 && <span className="text-xs text-muted-foreground">Qty</span>}
+                {index === 0 && <span className="text-xs text-muted-foreground">Qty per unit</span>}
                 <Input
                   type="number"
-                  step="0.01"
+                  step="0.0001"
                   min="0"
-                  value={input.quantity}
-                  onChange={(e) => updateInput(index, { quantity: e.target.value })}
+                  value={line.quantityPerUnit}
+                  onChange={(e) => updateLine(index, { quantityPerUnit: e.target.value })}
                 />
               </div>
               <Button
                 type="button"
                 variant="outline"
-                disabled={inputs.length === 1}
-                onClick={() => removeInput(index)}
+                disabled={lines.length === 1}
+                onClick={() => removeLine(index)}
               >
                 Remove
               </Button>
             </div>
           ))}
-          <Button type="button" variant="outline" onClick={addInput} className="mt-2 w-fit">
-            Add input
+          <Button type="button" variant="outline" onClick={addLine} className="mt-2 w-fit">
+            Add ingredient
           </Button>
         </div>
       </div>
@@ -151,9 +155,9 @@ export function ProductionBatchForm({
 
       <div className="flex gap-2">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving..." : "Create batch"}
+          {pending ? "Saving..." : "Save recipe"}
         </Button>
-        <Button type="button" variant="outline" render={<Link href="/production" />}>
+        <Button type="button" variant="outline" render={<Link href="/production/recipes" />}>
           Cancel
         </Button>
       </div>

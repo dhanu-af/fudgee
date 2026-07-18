@@ -146,6 +146,8 @@ model Product {
   inventoryTransactions InventoryTransaction[]
   productionBatches     ProductionBatch[]
   batchInputUsages      ProductionBatchInput[]
+  recipe                Recipe?
+  recipeLineUsages      RecipeLine[]
 }
 
 model Customer {
@@ -290,6 +292,32 @@ model SalesOrderLine {
   lineTotal    Decimal    @db.Decimal(14, 4)
   salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
   product      Product    @relation(fields: [productId], references: [id])
+}
+
+// --- Recipes / formulations ---
+
+// One recipe per finished good (MVP simplicity — no versioning). Quantities
+// are per single unit of the finished good (e.g. "1 cookie"), scaled up by
+// the Batch Calculator / batch creation flow rather than stored as
+// percentages, since that's how Dhanu naturally thinks about it.
+model Recipe {
+  id        String       @id @default(cuid())
+  productId String       @unique
+  name      String?
+  notes     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  product   Product      @relation(fields: [productId], references: [id])
+  lines     RecipeLine[]
+}
+
+model RecipeLine {
+  id              String  @id @default(cuid())
+  recipeId        String
+  productId       String
+  quantityPerUnit Decimal @db.Decimal(14, 4)
+  recipe          Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  product         Product @relation(fields: [productId], references: [id])
 }
 
 // --- Production & Quality Control (M5) ---

@@ -40,7 +40,11 @@ export function UserEditForm({
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="roleId">Role</Label>
-        <Select name="roleId" defaultValue={user.roleId}>
+        <Select
+          name="roleId"
+          defaultValue={user.roleId}
+          items={Object.fromEntries(roles.map((r) => [r.id, r.name]))}
+        >
           <SelectTrigger id="roleId">
             <SelectValue />
           </SelectTrigger>

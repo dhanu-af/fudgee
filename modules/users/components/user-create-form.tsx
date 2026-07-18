@@ -31,7 +31,11 @@ export function UserCreateForm({ roles }: { roles: Role[] }) {
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="roleId">Role</Label>
-        <Select name="roleId" defaultValue={roles[0]?.id}>
+        <Select
+          name="roleId"
+          defaultValue={roles[0]?.id}
+          items={Object.fromEntries(roles.map((r) => [r.id, r.name]))}
+        >
           <SelectTrigger id="roleId">
             <SelectValue />
           </SelectTrigger>

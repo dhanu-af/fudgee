@@ -63,7 +63,11 @@ export function ProductForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="type">Type</Label>
-          <Select name="type" defaultValue={product?.type ?? "FINISHED_GOOD"}>
+          <Select
+            name="type"
+            defaultValue={product?.type ?? "FINISHED_GOOD"}
+            items={{ FINISHED_GOOD: "Finished good", RAW_MATERIAL: "Raw material", PACKAGING: "Packaging" }}
+          >
             <SelectTrigger id="type">
               <SelectValue />
             </SelectTrigger>
@@ -76,7 +80,11 @@ export function ProductForm({
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="status">Status</Label>
-          <Select name="status" defaultValue={product?.status ?? "ACTIVE"}>
+          <Select
+            name="status"
+            defaultValue={product?.status ?? "ACTIVE"}
+            items={{ ACTIVE: "Active", INACTIVE: "Inactive", DISCONTINUED: "Discontinued" }}
+          >
             <SelectTrigger id="status">
               <SelectValue />
             </SelectTrigger>

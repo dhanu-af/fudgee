@@ -10,7 +10,7 @@ import { ActivityTimeline } from "@/modules/dashboard/components/activity-timeli
 import { BatchLookupCard } from "@/modules/dashboard/components/batch-lookup-card";
 import { ProductTypeChart } from "@/modules/dashboard/components/product-type-chart";
 import { RecordsTrendChart } from "@/modules/dashboard/components/records-trend-chart";
-import { LiveClock } from "@/modules/dashboard/components/live-clock";
+import { LiveClock, LiveDate } from "@/modules/dashboard/components/live-clock";
 import { FadeIn } from "@/components/motion/fade-in";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Welcome back, {firstName}</h1>
           <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-            {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+            <LiveDate />
             <span className="text-border">·</span>
             <LiveClock />
           </p>

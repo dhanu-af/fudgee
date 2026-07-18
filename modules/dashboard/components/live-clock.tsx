@@ -23,3 +23,17 @@ export function LiveClock() {
     </span>
   );
 }
+
+export function LiveDate() {
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!now) return null;
+
+  return <>{now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</>;
+}

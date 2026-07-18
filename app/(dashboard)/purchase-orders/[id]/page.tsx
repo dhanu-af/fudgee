@@ -3,7 +3,9 @@ import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { can } from "@/lib/rbac/can";
 import { getPurchaseOrderById } from "@/modules/purchase-orders/queries";
+import { deletePurchaseOrder } from "@/modules/purchase-orders/actions";
 import { PurchaseOrderStatusActions } from "@/modules/purchase-orders/components/purchase-order-status-actions";
+import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -30,9 +32,17 @@ export default async function PurchaseOrderDetailPage({ params }: { params: Prom
         <Badge>{po.status}</Badge>
       </div>
 
-      {can(session, PERMISSIONS.PURCHASE_ORDERS_WRITE) && (
-        <PurchaseOrderStatusActions id={po.id} status={po.status} />
-      )}
+      <div className="flex items-center justify-between">
+        {can(session, PERMISSIONS.PURCHASE_ORDERS_WRITE) && (
+          <PurchaseOrderStatusActions id={po.id} status={po.status} />
+        )}
+        {can(session, PERMISSIONS.SYSTEM_DELETE) && (
+          <DeleteRowButton
+            action={deletePurchaseOrder.bind(null, po.id)}
+            confirmMessage={`Delete PO-${String(po.seq).padStart(4, "0")}? This cannot be undone.`}
+          />
+        )}
+      </div>
 
       <Table>
         <TableHeader>

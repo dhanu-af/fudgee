@@ -48,3 +48,23 @@ export async function updateSupplier(
   revalidatePath("/purchase-orders/suppliers");
   redirect("/purchase-orders/suppliers");
 }
+
+export async function deleteSupplier(
+  id: string,
+  _prev: SupplierFormState,
+  _formData: FormData
+): Promise<SupplierFormState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  try {
+    await db.supplier.delete({ where: { id } });
+  } catch (err) {
+    if ((err as { code?: string })?.code === "P2003") {
+      return { error: "Can't delete — this supplier has existing purchase orders." };
+    }
+    return { error: "Failed to delete supplier." };
+  }
+
+  revalidatePath("/purchase-orders/suppliers");
+  redirect("/purchase-orders/suppliers");
+}

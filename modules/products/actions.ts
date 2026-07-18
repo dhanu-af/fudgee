@@ -48,3 +48,23 @@ export async function updateProduct(
   revalidatePath("/products");
   redirect("/products");
 }
+
+export async function deleteProduct(
+  id: string,
+  _prev: ProductFormState,
+  _formData: FormData
+): Promise<ProductFormState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  try {
+    await db.product.delete({ where: { id } });
+  } catch (err) {
+    if ((err as { code?: string })?.code === "P2003") {
+      return { error: "Can't delete — this product is used in existing orders, batches, or inventory records." };
+    }
+    return { error: "Failed to delete product." };
+  }
+
+  revalidatePath("/products");
+  redirect("/products");
+}

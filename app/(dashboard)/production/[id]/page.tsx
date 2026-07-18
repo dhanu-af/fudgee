@@ -3,8 +3,10 @@ import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { can } from "@/lib/rbac/can";
 import { getProductionBatchById } from "@/modules/production/queries";
+import { deleteProductionBatch } from "@/modules/production/actions";
 import { ProductionBatchStatusActions } from "@/modules/production/components/production-batch-status-actions";
 import { BatchCostingCard } from "@/modules/production/components/batch-costing-card";
+import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -33,13 +35,21 @@ export default async function ProductionBatchDetailPage({ params }: { params: Pr
         <Badge>{batch.status}</Badge>
       </div>
 
-      {can(session, PERMISSIONS.PRODUCTION_WRITE) && (
-        <ProductionBatchStatusActions
-          id={batch.id}
-          status={batch.status}
-          quantityPlanned={Number(batch.quantityPlanned)}
-        />
-      )}
+      <div className="flex items-center justify-between">
+        {can(session, PERMISSIONS.PRODUCTION_WRITE) && (
+          <ProductionBatchStatusActions
+            id={batch.id}
+            status={batch.status}
+            quantityPlanned={Number(batch.quantityPlanned)}
+          />
+        )}
+        {can(session, PERMISSIONS.SYSTEM_DELETE) && (
+          <DeleteRowButton
+            action={deleteProductionBatch.bind(null, batch.id)}
+            confirmMessage={`Delete BATCH-${String(batch.seq).padStart(4, "0")}? This cannot be undone.`}
+          />
+        )}
+      </div>
 
       <div className="flex flex-col gap-1 text-sm">
         <div className="flex justify-between">

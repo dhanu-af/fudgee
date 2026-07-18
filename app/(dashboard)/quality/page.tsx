@@ -3,7 +3,7 @@ import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { can } from "@/lib/rbac/can";
 import { getQualityChecks } from "@/modules/quality/queries";
-import { qualityCheckColumns } from "@/modules/quality/components/quality-check-columns";
+import { getQualityCheckColumns } from "@/modules/quality/components/quality-check-columns";
 import { DataTable } from "@/components/data-table/data-table";
 import { Button } from "@/components/ui/button";
 
@@ -19,7 +19,11 @@ export default async function QualityPage() {
           <Button render={<Link href="/quality/new" />}>Record check</Button>
         )}
       </div>
-      <DataTable columns={qualityCheckColumns} data={checks} emptyMessage="No quality checks recorded yet." />
+      <DataTable
+        columns={getQualityCheckColumns(can(session, PERMISSIONS.SYSTEM_DELETE))}
+        data={checks}
+        emptyMessage="No quality checks recorded yet."
+      />
     </div>
   );
 }

@@ -110,3 +110,20 @@ export async function cancelPurchaseOrder(
   revalidatePath(`/purchase-orders/${id}`);
   return {};
 }
+
+export async function deletePurchaseOrder(
+  id: string,
+  _prev: PurchaseOrderActionState,
+  _formData: FormData
+): Promise<PurchaseOrderActionState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  try {
+    await db.purchaseOrder.delete({ where: { id } });
+  } catch {
+    return { error: "Failed to delete purchase order." };
+  }
+
+  revalidatePath("/purchase-orders");
+  redirect("/purchase-orders");
+}

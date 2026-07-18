@@ -136,3 +136,20 @@ export async function cancelProductionBatch(
   revalidatePath(`/production/${id}`);
   return {};
 }
+
+export async function deleteProductionBatch(
+  id: string,
+  _prev: ProductionBatchActionState,
+  _formData: FormData
+): Promise<ProductionBatchActionState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  try {
+    await db.productionBatch.delete({ where: { id } });
+  } catch {
+    return { error: "Failed to delete production batch." };
+  }
+
+  revalidatePath("/production");
+  redirect("/production");
+}

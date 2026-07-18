@@ -19,6 +19,9 @@ export const PERMISSIONS = {
   REPORTS_READ: "reports:read",
   USERS_MANAGE: "users:manage",
   SETTINGS_MANAGE: "settings:manage",
+  // Deliberately not granted to admin — delete is reserved for super_admin
+  // only, across every module, per Dhanu's explicit request.
+  SYSTEM_DELETE: "system:delete",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -27,7 +30,9 @@ export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 // permissions means adding entries here (+ reseeding), not scattered edits.
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, PermissionKey[]> = {
   super_admin: Object.values(PERMISSIONS),
-  admin: Object.values(PERMISSIONS).filter((p) => p !== PERMISSIONS.SETTINGS_MANAGE),
+  admin: Object.values(PERMISSIONS).filter(
+    (p) => p !== PERMISSIONS.SETTINGS_MANAGE && p !== PERMISSIONS.SYSTEM_DELETE
+  ),
   production: [
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.PRODUCTION_READ,

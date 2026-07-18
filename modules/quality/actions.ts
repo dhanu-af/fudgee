@@ -34,3 +34,23 @@ export async function createQualityCheck(
   revalidatePath(`/production/${parsed.data.productionBatchId}`);
   redirect("/quality");
 }
+
+export async function deleteQualityCheck(
+  id: string,
+  _prev: QualityCheckFormState,
+  _formData: FormData
+): Promise<QualityCheckFormState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  const check = await db.qualityCheck.findUnique({ where: { id }, select: { productionBatchId: true } });
+
+  try {
+    await db.qualityCheck.delete({ where: { id } });
+  } catch {
+    return { error: "Failed to delete quality check." };
+  }
+
+  revalidatePath("/quality");
+  if (check) revalidatePath(`/production/${check.productionBatchId}`);
+  return {};
+}

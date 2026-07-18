@@ -48,3 +48,23 @@ export async function updateLocation(
   revalidatePath("/warehouse");
   redirect("/warehouse");
 }
+
+export async function deleteLocation(
+  id: string,
+  _prev: LocationFormState,
+  _formData: FormData
+): Promise<LocationFormState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  try {
+    await db.location.delete({ where: { id } });
+  } catch (err) {
+    if ((err as { code?: string })?.code === "P2003") {
+      return { error: "Can't delete — this location has inventory transactions recorded against it." };
+    }
+    return { error: "Failed to delete location." };
+  }
+
+  revalidatePath("/warehouse");
+  redirect("/warehouse");
+}

@@ -3,7 +3,9 @@ import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { can } from "@/lib/rbac/can";
 import { getSalesOrderById } from "@/modules/sales-orders/queries";
+import { deleteSalesOrder } from "@/modules/sales-orders/actions";
 import { SalesOrderStatusActions } from "@/modules/sales-orders/components/sales-order-status-actions";
+import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -30,9 +32,17 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
         <Badge>{so.status}</Badge>
       </div>
 
-      {can(session, PERMISSIONS.SALES_ORDERS_WRITE) && (
-        <SalesOrderStatusActions id={so.id} status={so.status} />
-      )}
+      <div className="flex items-center justify-between">
+        {can(session, PERMISSIONS.SALES_ORDERS_WRITE) && (
+          <SalesOrderStatusActions id={so.id} status={so.status} />
+        )}
+        {can(session, PERMISSIONS.SYSTEM_DELETE) && (
+          <DeleteRowButton
+            action={deleteSalesOrder.bind(null, so.id)}
+            confirmMessage={`Delete SO-${String(so.seq).padStart(4, "0")}? This cannot be undone.`}
+          />
+        )}
+      </div>
 
       <Table>
         <TableHeader>

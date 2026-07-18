@@ -48,3 +48,23 @@ export async function updateCustomer(
   revalidatePath("/customers");
   redirect("/customers");
 }
+
+export async function deleteCustomer(
+  id: string,
+  _prev: CustomerFormState,
+  _formData: FormData
+): Promise<CustomerFormState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  try {
+    await db.customer.delete({ where: { id } });
+  } catch (err) {
+    if ((err as { code?: string })?.code === "P2003") {
+      return { error: "Can't delete — this customer has existing sales orders." };
+    }
+    return { error: "Failed to delete customer." };
+  }
+
+  revalidatePath("/customers");
+  redirect("/customers");
+}

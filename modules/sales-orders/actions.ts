@@ -112,3 +112,20 @@ export async function cancelSalesOrder(
   revalidatePath(`/sales-orders/${id}`);
   return {};
 }
+
+export async function deleteSalesOrder(
+  id: string,
+  _prev: SalesOrderActionState,
+  _formData: FormData
+): Promise<SalesOrderActionState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  try {
+    await db.salesOrder.delete({ where: { id } });
+  } catch {
+    return { error: "Failed to delete sales order." };
+  }
+
+  revalidatePath("/sales-orders");
+  redirect("/sales-orders");
+}

@@ -25,7 +25,7 @@ export function Sidebar({ permissions }: { permissions: PermissionKey[] }) {
           F
         </div>
         <div className="min-w-0">
-          <div className="truncate text-base font-semibold leading-tight">Fudgee</div>
+          <div className="truncate text-base font-semibold leading-tight tracking-tight">Fudgee</div>
           <div className="truncate text-[11px] text-muted-foreground">Manufacturing Operations</div>
         </div>
       </div>

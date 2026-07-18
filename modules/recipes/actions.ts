@@ -21,6 +21,12 @@ function parseLines(linesJson: string) {
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid ingredients." } as const;
   }
+
+  const total = parsed.data.reduce((sum, l) => sum + l.percentage, 0);
+  if (Math.abs(total - 100) > 0.01) {
+    return { error: `Ingredient percentages must total 100% (currently ${total.toFixed(4)}%).` } as const;
+  }
+
   return { lines: parsed.data } as const;
 }
 

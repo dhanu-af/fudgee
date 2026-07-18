@@ -23,7 +23,7 @@ export async function createBatchCalculation(
   const recipe = await db.recipe.findUnique({ where: { id: parsed.data.recipeId }, include: { lines: true } });
   if (!recipe) return { error: "Recipe not found." };
 
-  const tolerance = parsed.data.tolerancePercent ?? 2;
+  const tolerance = parsed.data.tolerancePercent;
   const requiredBatchSize = parsed.data.requiredBatchSize;
 
   const lines = recipe.lines.map((line) => {
@@ -71,8 +71,8 @@ export async function updateActualDispensed(
 
   const raw = formData.get("actualDispensed");
   const value = raw !== null && raw !== "" ? Number(raw) : null;
-  if (value !== null && Number.isNaN(value)) {
-    return { error: "Invalid quantity." };
+  if (value !== null && (Number.isNaN(value) || value < 0)) {
+    return { error: "Enter a valid, non-negative quantity." };
   }
 
   await db.batchCalculationLine.update({

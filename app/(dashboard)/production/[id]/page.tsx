@@ -4,6 +4,7 @@ import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { can } from "@/lib/rbac/can";
 import { getProductionBatchById } from "@/modules/production/queries";
 import { ProductionBatchStatusActions } from "@/modules/production/components/production-batch-status-actions";
+import { BatchCostingCard } from "@/modules/production/components/batch-costing-card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -45,13 +46,16 @@ export default async function ProductionBatchDetailPage({ params }: { params: Pr
           <span className="text-muted-foreground">Planned quantity</span>
           <span>{String(batch.quantityPlanned)}</span>
         </div>
-        {batch.quantityActual != null && (
-          <div className="flex justify-between font-medium">
-            <span>Actual quantity</span>
-            <span>{String(batch.quantityActual)}</span>
-          </div>
-        )}
       </div>
+
+      {batch.quantityActual != null && (
+        <BatchCostingCard
+          inputs={batch.inputs}
+          quantityActual={Number(batch.quantityActual)}
+          quantityWaste={batch.quantityWaste != null ? Number(batch.quantityWaste) : null}
+          sellPrice={batch.product.sellPrice != null ? Number(batch.product.sellPrice) : null}
+        />
+      )}
 
       <div className="flex flex-col gap-2">
         <h2 className="text-sm font-medium">Raw material inputs</h2>

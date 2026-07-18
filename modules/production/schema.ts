@@ -14,6 +14,7 @@ export const productionBatchSchema = z.object({
 
 export const completeBatchSchema = z.object({
   quantityActual: z.coerce.number().positive("Actual quantity must be greater than zero"),
+  quantityWaste: z.coerce.number().nonnegative().optional().or(z.nan().transform(() => undefined)),
 });
 
 export type BatchInputLineInput = z.infer<typeof productionBatchInputSchema>;

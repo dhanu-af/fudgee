@@ -49,7 +49,7 @@ export function ProductionBatchStatusActions({
           <form action={completeAction} className="flex items-end gap-2">
             <div className="flex flex-col gap-1">
               <Label htmlFor="quantityActual" className="text-xs text-muted-foreground">
-                Actual quantity produced
+                Good quantity produced
               </Label>
               <Input
                 id="quantityActual"
@@ -58,6 +58,20 @@ export function ProductionBatchStatusActions({
                 step="0.01"
                 min="0"
                 defaultValue={quantityPlanned}
+                className="w-32"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="quantityWaste" className="text-xs text-muted-foreground">
+                Waste / rejects
+              </Label>
+              <Input
+                id="quantityWaste"
+                name="quantityWaste"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={0}
                 className="w-32"
               />
             </div>

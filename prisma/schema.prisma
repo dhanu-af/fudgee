@@ -307,6 +307,7 @@ model ProductionBatch {
   productId       String
   quantityPlanned Decimal                @db.Decimal(14, 4)
   quantityActual  Decimal?               @db.Decimal(14, 4)
+  quantityWaste   Decimal?               @db.Decimal(14, 4)
   status          ProductionBatchStatus  @default(PLANNED)
   startedAt       DateTime?
   completedAt     DateTime?

@@ -88,7 +88,12 @@ export async function completeProductionBatch(
   await db.$transaction([
     db.productionBatch.update({
       where: { id },
-      data: { status: "COMPLETED", quantityActual: parsed.data.quantityActual, completedAt: new Date() },
+      data: {
+        status: "COMPLETED",
+        quantityActual: parsed.data.quantityActual,
+        quantityWaste: parsed.data.quantityWaste,
+        completedAt: new Date(),
+      },
     }),
     ...batch.inputs.map((input) =>
       db.inventoryTransaction.create({

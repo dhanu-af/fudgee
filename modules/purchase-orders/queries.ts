@@ -19,9 +19,11 @@ export function getSupplierOptions() {
   });
 }
 
+// Purchase Orders only buy raw materials/packaging from suppliers — finished
+// goods are made in-house via Production, never purchased.
 export function getProductOptions() {
   return db.product.findMany({
-    where: { status: "ACTIVE" },
+    where: { status: "ACTIVE", type: { in: ["RAW_MATERIAL", "PACKAGING"] } },
     select: { id: true, sku: true, name: true, costPrice: true },
     orderBy: { name: "asc" },
   });

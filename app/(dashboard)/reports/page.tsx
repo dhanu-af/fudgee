@@ -1,8 +1,17 @@
+import Link from "next/link";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { getReportsData } from "@/modules/reports/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default async function ReportsPage() {
   await requirePermission(PERMISSIONS.REPORTS_READ);
@@ -94,6 +103,46 @@ export default async function ReportsPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold">Batch Costing</h2>
+        {data.batchCosting.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No completed batches yet.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Batch</TableHead>
+                <TableHead>Product</TableHead>
+                <TableHead>Produced</TableHead>
+                <TableHead>Waste</TableHead>
+                <TableHead>Raw material cost</TableHead>
+                <TableHead>Avg. cost/unit</TableHead>
+                <TableHead>Profit/unit</TableHead>
+                <TableHead>Total profit</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.batchCosting.map((batch) => (
+                <TableRow key={batch.id}>
+                  <TableCell>
+                    <Link href={`/production/${batch.id}`} className="font-medium hover:underline">
+                      {`BATCH-${String(batch.seq).padStart(4, "0")}`}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{`${batch.productName} (${batch.productSku})`}</TableCell>
+                  <TableCell>{batch.quantityActual}</TableCell>
+                  <TableCell>{batch.quantityWaste}</TableCell>
+                  <TableCell>{batch.totalRawMaterialCost.toFixed(2)}</TableCell>
+                  <TableCell>{batch.avgCostPerUnit !== null ? batch.avgCostPerUnit.toFixed(2) : "—"}</TableCell>
+                  <TableCell>{batch.profitPerUnit !== null ? batch.profitPerUnit.toFixed(2) : "—"}</TableCell>
+                  <TableCell>{batch.totalProfit !== null ? batch.totalProfit.toFixed(2) : "—"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );

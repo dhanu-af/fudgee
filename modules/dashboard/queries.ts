@@ -9,6 +9,9 @@ const BUILT_MODULE_KEYS = new Set([
   "users",
   "warehouse",
   "inventory",
+  "sales_orders",
+  "purchase_orders",
+  "production",
 ]);
 
 export async function getDashboardData() {
@@ -89,6 +92,12 @@ export async function getDashboardData() {
     totalUnitsOnHand: stockLevels.reduce((sum, row) => sum + Math.max(row.onHand, 0), 0),
   };
 
+  const [activeBatchCount, completedBatchCount] = await Promise.all([
+    db.productionBatch.count({ where: { status: { in: ["PLANNED", "IN_PROGRESS"] } } }),
+    db.productionBatch.count({ where: { status: "COMPLETED" } }),
+  ]);
+  const productionSummary = { activeBatchCount, completedBatchCount };
+
   return {
     kpis: { productCount, customerCount, activeUserCount },
     productTypeChart,
@@ -96,5 +105,6 @@ export async function getDashboardData() {
     activity,
     buildProgress: { built: builtModules, total: totalModules },
     inventorySummary,
+    productionSummary,
   };
 }

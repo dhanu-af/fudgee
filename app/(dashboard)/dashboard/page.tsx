@@ -1,10 +1,11 @@
-import { Package, Users as UsersIcon, UserCog, Rocket, Factory, FlaskConical, Activity } from "lucide-react";
+import { Package, Users as UsersIcon, UserCog, Rocket, FlaskConical, Activity } from "lucide-react";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS, ROLE_LABELS } from "@/lib/rbac/permissions";
 import { getDashboardData } from "@/modules/dashboard/queries";
 import { StatTile } from "@/modules/dashboard/components/stat-tile";
 import { ComingSoonCard } from "@/modules/dashboard/components/coming-soon-card";
 import { InventorySummaryCard } from "@/modules/inventory/components/inventory-summary-card";
+import { ProductionOverviewCard } from "@/modules/production/components/production-overview-card";
 import { ActivityTimeline } from "@/modules/dashboard/components/activity-timeline";
 import { BatchLookupCard } from "@/modules/dashboard/components/batch-lookup-card";
 import { ProductTypeChart } from "@/modules/dashboard/components/product-type-chart";
@@ -85,7 +86,10 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 xl:grid-cols-3">
         <FadeIn delay={0.4}>
-          <ComingSoonCard title="Production Overview" icon={Factory} milestone="M5" />
+          <ProductionOverviewCard
+            activeBatchCount={data.productionSummary.activeBatchCount}
+            completedBatchCount={data.productionSummary.completedBatchCount}
+          />
         </FadeIn>
         <FadeIn delay={0.45}>
           <InventorySummaryCard

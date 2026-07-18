@@ -37,3 +37,22 @@ export async function createAdjustment(
   revalidatePath("/inventory");
   redirect("/inventory");
 }
+
+export type TransactionActionState = { error?: string };
+
+export async function deleteInventoryTransaction(
+  id: string,
+  _prev: TransactionActionState,
+  _formData: FormData
+): Promise<TransactionActionState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  try {
+    await db.inventoryTransaction.delete({ where: { id } });
+  } catch {
+    return { error: "Failed to delete transaction." };
+  }
+
+  revalidatePath("/inventory");
+  return {};
+}

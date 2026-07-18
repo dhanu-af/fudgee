@@ -148,6 +148,7 @@ model Product {
   batchInputUsages      ProductionBatchInput[]
   recipe                Recipe?
   recipeLineUsages      RecipeLine[]
+  batchCalcLineUsages   BatchCalculationLine[]
 }
 
 model Customer {
@@ -296,28 +297,66 @@ model SalesOrderLine {
 
 // --- Recipes / formulations ---
 
-// One recipe per finished good (MVP simplicity — no versioning). Quantities
-// are per single unit of the finished good (e.g. "1 cookie"), scaled up by
-// the Batch Calculator / batch creation flow rather than stored as
-// percentages, since that's how Dhanu naturally thinks about it.
+// One recipe per finished good (MVP simplicity — no versioning). A "Master
+// Formulation, Controlled Percentage Basis" document: each ingredient is a
+// % of a defined base batch size, matching the format Dhanu already uses
+// for her other formulation business.
 model Recipe {
-  id        String       @id @default(cuid())
-  productId String       @unique
-  name      String?
-  notes     String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  product   Product      @relation(fields: [productId], references: [id])
-  lines     RecipeLine[]
+  id            String             @id @default(cuid())
+  productId     String             @unique
+  name          String?
+  baseBatchSize Decimal?           @db.Decimal(14, 4)
+  notes         String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  product       Product            @relation(fields: [productId], references: [id])
+  lines         RecipeLine[]
+  calculations  BatchCalculation[]
 }
 
 model RecipeLine {
-  id              String  @id @default(cuid())
-  recipeId        String
-  productId       String
-  quantityPerUnit Decimal @db.Decimal(14, 4)
-  recipe          Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  product         Product @relation(fields: [productId], references: [id])
+  id               String   @id @default(cuid())
+  recipeId         String
+  productId        String
+  percentage       Decimal? @db.Decimal(9, 4)
+  uin              String?
+  controlStatus    String   @default("APPROVED")
+  changeControlRef String?
+  approvedBy       String?
+  recipe           Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id])
+}
+
+// A saved, auditable "batch record" — scaling a Recipe to a real production
+// run, with sign-off fields and a tolerance band per ingredient, rather than
+// a throwaway on-screen calculation.
+model BatchCalculation {
+  id                String                 @id @default(cuid())
+  recipeId          String
+  seq               Int                    @default(autoincrement())
+  batchNumber       String?
+  requiredBatchSize Decimal                @db.Decimal(14, 4)
+  tolerancePercent  Decimal                @default(2) @db.Decimal(5, 2)
+  enteredBy         String?
+  checkedBy         String?
+  calculationDate   DateTime               @default(now())
+  createdAt         DateTime               @default(now())
+  recipe            Recipe                 @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  lines             BatchCalculationLine[]
+}
+
+model BatchCalculationLine {
+  id                 String           @id @default(cuid())
+  batchCalculationId String
+  productId          String
+  percentage         Decimal          @db.Decimal(9, 4)
+  calculatedQty      Decimal          @db.Decimal(14, 4)
+  roundedQty         Decimal          @db.Decimal(14, 4)
+  minQty             Decimal          @db.Decimal(14, 4)
+  maxQty             Decimal          @db.Decimal(14, 4)
+  actualDispensed    Decimal?         @db.Decimal(14, 4)
+  batchCalculation   BatchCalculation @relation(fields: [batchCalculationId], references: [id], onDelete: Cascade)
+  product            Product          @relation(fields: [productId], references: [id])
 }
 
 // --- Production & Quality Control (M5) ---

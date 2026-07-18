@@ -40,6 +40,7 @@ export async function createRecipe(_prev: RecipeFormState, formData: FormData): 
       data: {
         productId: parsed.data.productId,
         name: parsed.data.name || undefined,
+        baseBatchSize: parsed.data.baseBatchSize,
         notes: parsed.data.notes || undefined,
         lines: { create: linesResult.lines },
       },
@@ -70,7 +71,11 @@ export async function updateRecipe(
   await db.$transaction([
     db.recipe.update({
       where: { id },
-      data: { name: parsed.data.name || undefined, notes: parsed.data.notes || undefined },
+      data: {
+        name: parsed.data.name || undefined,
+        baseBatchSize: parsed.data.baseBatchSize,
+        notes: parsed.data.notes || undefined,
+      },
     }),
     db.recipeLine.deleteMany({ where: { recipeId: id } }),
     db.recipeLine.createMany({ data: linesResult.lines.map((l) => ({ ...l, recipeId: id })) }),

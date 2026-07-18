@@ -16,14 +16,15 @@ import {
 import type { RecipeFormState } from "@/modules/recipes/actions";
 
 type Option = { id: string; label: string };
-type Line = { productId: string; quantityPerUnit: string };
+type Line = { productId: string; percentage: string; uin: string };
 
 type ExistingRecipe = {
   id: string;
   name: string | null;
+  baseBatchSize: unknown;
   notes: string | null;
   product: { id: string; name: string; sku: string };
-  lines: { productId: string; quantityPerUnit: unknown }[];
+  lines: { productId: string; percentage: unknown; uin: string | null }[];
 };
 
 export function RecipeForm({
@@ -40,12 +41,16 @@ export function RecipeForm({
   const [state, formAction, pending] = useActionState<RecipeFormState, FormData>(action, {});
   const [lines, setLines] = useState<Line[]>(
     recipe && recipe.lines.length > 0
-      ? recipe.lines.map((l) => ({ productId: l.productId, quantityPerUnit: String(l.quantityPerUnit) }))
-      : [{ productId: rawMaterials[0]?.id ?? "", quantityPerUnit: "1" }]
+      ? recipe.lines.map((l) => ({
+          productId: l.productId,
+          percentage: String(l.percentage),
+          uin: l.uin ?? "",
+        }))
+      : [{ productId: rawMaterials[0]?.id ?? "", percentage: "", uin: "" }]
   );
 
   function addLine() {
-    setLines((prev) => [...prev, { productId: rawMaterials[0]?.id ?? "", quantityPerUnit: "1" }]);
+    setLines((prev) => [...prev, { productId: rawMaterials[0]?.id ?? "", percentage: "", uin: "" }]);
   }
 
   function removeLine(index: number) {
@@ -56,12 +61,19 @@ export function RecipeForm({
     setLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)));
   }
 
+  const totalPercentage = lines.reduce((sum, l) => sum + (Number(l.percentage) || 0), 0);
+
   const linesForSubmit = lines
     .filter((l) => l.productId)
-    .map((l) => ({ productId: l.productId, quantityPerUnit: Number(l.quantityPerUnit) || 0 }));
+    .map((l) => ({
+      productId: l.productId,
+      percentage: Number(l.percentage) || 0,
+      uin: l.uin || undefined,
+      controlStatus: "APPROVED" as const,
+    }));
 
   return (
-    <form action={formAction} className="flex max-w-2xl flex-col gap-4">
+    <form action={formAction} className="flex max-w-3xl flex-col gap-4">
       <input type="hidden" name="linesJson" value={JSON.stringify(linesForSubmit)} />
 
       {recipe ? (
@@ -91,9 +103,23 @@ export function RecipeForm({
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="name">Recipe name</Label>
-        <Input id="name" name="name" placeholder="e.g. Standard recipe" defaultValue={recipe?.name ?? ""} />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="name">Recipe name</Label>
+          <Input id="name" name="name" placeholder="e.g. Standard formulation" defaultValue={recipe?.name ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="baseBatchSize">Base batch size</Label>
+          <Input
+            id="baseBatchSize"
+            name="baseBatchSize"
+            type="number"
+            step="0.0001"
+            min="0"
+            required
+            defaultValue={recipe?.baseBatchSize != null ? String(recipe.baseBatchSize) : ""}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -102,12 +128,12 @@ export function RecipeForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label>Ingredients (quantity per one unit)</Label>
+        <Label>Master Formulation — Controlled Percentage Basis</Label>
         <div className="flex flex-col gap-2 rounded-lg border border-border/60 p-3">
           {lines.map((line, index) => (
-            <div key={index} className="grid grid-cols-[1fr_120px_auto] items-end gap-2">
+            <div key={index} className="grid grid-cols-[1fr_110px_120px_auto] items-end gap-2">
               <div className="flex flex-col gap-1">
-                {index === 0 && <span className="text-xs text-muted-foreground">Raw material</span>}
+                {index === 0 && <span className="text-xs text-muted-foreground">Ingredient / AAN</span>}
                 <Select
                   value={line.productId}
                   onValueChange={(value) => updateLine(index, { productId: value ?? "" })}
@@ -126,14 +152,19 @@ export function RecipeForm({
                 </Select>
               </div>
               <div className="flex flex-col gap-1">
-                {index === 0 && <span className="text-xs text-muted-foreground">Qty per unit</span>}
+                {index === 0 && <span className="text-xs text-muted-foreground">% w/w</span>}
                 <Input
                   type="number"
                   step="0.0001"
                   min="0"
-                  value={line.quantityPerUnit}
-                  onChange={(e) => updateLine(index, { quantityPerUnit: e.target.value })}
+                  max="100"
+                  value={line.percentage}
+                  onChange={(e) => updateLine(index, { percentage: e.target.value })}
                 />
+              </div>
+              <div className="flex flex-col gap-1">
+                {index === 0 && <span className="text-xs text-muted-foreground">UIN</span>}
+                <Input value={line.uin} onChange={(e) => updateLine(index, { uin: e.target.value })} />
               </div>
               <Button
                 type="button"
@@ -149,6 +180,9 @@ export function RecipeForm({
             Add ingredient
           </Button>
         </div>
+        <p className={`text-right text-sm font-medium ${Math.abs(totalPercentage - 100) > 0.01 ? "text-destructive" : ""}`}>
+          Total: {totalPercentage.toFixed(4)}% {Math.abs(totalPercentage - 100) > 0.01 && "(should total 100%)"}
+        </p>
       </div>
 
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}

@@ -1,29 +1,30 @@
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { getFinishedGoodOptions, getRawMaterialOptions } from "@/modules/production/queries";
-import { getRecipeById } from "@/modules/recipes/queries";
+import { getBatchCalculationById } from "@/modules/batch-calculations/queries";
 import { ProductionBatchForm } from "@/modules/production/components/production-batch-form";
 
 export default async function NewProductionBatchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ recipeId?: string; quantity?: string }>;
+  searchParams: Promise<{ calcId?: string }>;
 }) {
   await requirePermission(PERMISSIONS.PRODUCTION_WRITE);
-  const { recipeId, quantity } = await searchParams;
+  const { calcId } = await searchParams;
   const [finishedGoods, rawMaterials] = await Promise.all([getFinishedGoodOptions(), getRawMaterialOptions()]);
 
   let initialProductId: string | undefined;
+  let initialQuantityPlanned: string | undefined;
   let initialInputs: { productId: string; quantity: string }[] | undefined;
 
-  if (recipeId) {
-    const recipe = await getRecipeById(recipeId);
-    if (recipe) {
-      initialProductId = recipe.productId;
-      const qty = Number(quantity) || 0;
-      initialInputs = recipe.lines.map((l) => ({
+  if (calcId) {
+    const calc = await getBatchCalculationById(calcId);
+    if (calc) {
+      initialProductId = calc.recipe.productId;
+      initialQuantityPlanned = String(calc.requiredBatchSize);
+      initialInputs = calc.lines.map((l) => ({
         productId: l.productId,
-        quantity: String(Number(l.quantityPerUnit) * qty),
+        quantity: String(l.roundedQty),
       }));
     }
   }
@@ -41,7 +42,7 @@ export default async function NewProductionBatchPage({
           finishedGoods={finishedGoods.map((p) => ({ id: p.id, label: `${p.name} (${p.sku})` }))}
           rawMaterials={rawMaterials.map((p) => ({ id: p.id, label: `${p.name} (${p.sku})` }))}
           initialProductId={initialProductId}
-          initialQuantityPlanned={quantity}
+          initialQuantityPlanned={initialQuantityPlanned}
           initialInputs={initialInputs}
         />
       )}

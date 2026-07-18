@@ -4,7 +4,7 @@ import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { can } from "@/lib/rbac/can";
 import { getStockLevels, getRecentTransactions } from "@/modules/inventory/queries";
 import { stockColumns } from "@/modules/inventory/components/stock-columns";
-import { getTransactionColumns } from "@/modules/inventory/components/transaction-columns";
+import { TransactionTable } from "@/modules/inventory/components/transaction-table";
 import { DataTable } from "@/components/data-table/data-table";
 import { Button } from "@/components/ui/button";
 
@@ -26,11 +26,7 @@ export default async function InventoryPage() {
 
       <div className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">Recent transactions</h2>
-        <DataTable
-          columns={getTransactionColumns(can(session, PERMISSIONS.SYSTEM_DELETE))}
-          data={transactions}
-          emptyMessage="No transactions yet."
-        />
+        <TransactionTable data={transactions} canDelete={can(session, PERMISSIONS.SYSTEM_DELETE)} />
       </div>
     </div>
   );

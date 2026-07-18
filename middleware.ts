@@ -11,7 +11,6 @@ export default auth((req) => {
   const isDashboardRoute = DASHBOARD_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
-  console.log("[middleware]", { method: req.method, pathname, isDashboardRoute, hasAuth: !!req.auth });
   if (isDashboardRoute && !req.auth) {
     const loginUrl = new URL("/login", req.nextUrl);
     loginUrl.searchParams.set("callbackUrl", pathname);

@@ -149,6 +149,15 @@ model Product {
   recipe                Recipe?
   recipeLineUsages      RecipeLine[]
   batchCalcLineUsages   BatchCalculationLine[]
+
+  // --- Storefront marketing fields (all optional — purely additive, no
+  // effect on the internal Products/Production/Inventory workflows) ---
+  categoryId       String?
+  category         Category? @relation(fields: [categoryId], references: [id])
+  imageUrl         String?
+  shortDescription String?
+  isFeatured       Boolean   @default(false)
+  isBestSeller     Boolean   @default(false)
 }
 
 model Customer {
@@ -411,4 +420,90 @@ model QualityCheck {
   createdAt         DateTime        @default(now())
   productionBatch   ProductionBatch @relation(fields: [productionBatchId], references: [id], onDelete: Cascade)
   checkedByUser     User?           @relation(fields: [checkedByUserId], references: [id])
+}
+
+// --- Storefront (public marketing site + admin-manageable CMS content) ---
+// Entirely new, additive models. The public site reads these plus the
+// marketing fields added to Product above; checkout writes into the
+// existing Customer/SalesOrder/SalesOrderLine models untouched (see
+// modules/storefront/actions.ts) so the Sales/Customer modules and their
+// schema are never modified by any of this.
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+model GalleryItem {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  caption   String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  customerName String
+  rating       Int      @default(5)
+  body         String
+  isFeatured   Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model FaqItem {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Single-row settings for the public homepage's non-repeating copy (hero,
+// about, contact, newsletter blurb) — same singleton pattern as
+// Organization above, edited via one form rather than a collection.
+model StorefrontSettings {
+  id                   String   @id @default(cuid())
+  heroHeading          String?
+  heroSubheading       String?
+  heroImageUrl         String?
+  aboutHeading         String?
+  aboutBody            String?
+  aboutImageUrl        String?
+  contactEmail         String?
+  contactPhone         String?
+  contactAddress       String?
+  newsletterHeading    String?
+  newsletterSubheading String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model NewsletterSignup {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
 }

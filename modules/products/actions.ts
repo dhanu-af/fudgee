@@ -9,10 +9,18 @@ import { productSchema } from "@/modules/products/schema";
 
 export type ProductFormState = { error?: string };
 
+function productFormObject(formData: FormData) {
+  return {
+    ...Object.fromEntries(formData),
+    isFeatured: formData.get("isFeatured") === "on",
+    isBestSeller: formData.get("isBestSeller") === "on",
+  };
+}
+
 export async function createProduct(_prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
   await requirePermission(PERMISSIONS.PRODUCTS_WRITE);
 
-  const parsed = productSchema.safeParse(Object.fromEntries(formData));
+  const parsed = productSchema.safeParse(productFormObject(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
@@ -34,7 +42,7 @@ export async function updateProduct(
 ): Promise<ProductFormState> {
   await requirePermission(PERMISSIONS.PRODUCTS_WRITE);
 
-  const parsed = productSchema.safeParse(Object.fromEntries(formData));
+  const parsed = productSchema.safeParse(productFormObject(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }

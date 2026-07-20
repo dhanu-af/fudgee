@@ -11,6 +11,7 @@ import {
   BarChart3,
   UserCog,
   Settings,
+  Store,
 } from "lucide-react";
 import { PERMISSIONS, type PermissionKey } from "@/lib/rbac/permissions";
 
@@ -38,6 +39,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
   { key: "quality", label: "Quality Control", route: "/quality", icon: FlaskConical, permission: PERMISSIONS.QUALITY_READ, group: "operations" },
   { key: "reports", label: "Reports", route: "/reports", icon: BarChart3, permission: PERMISSIONS.REPORTS_READ, group: "insights" },
   { key: "users", label: "User Management", route: "/users", icon: UserCog, permission: PERMISSIONS.USERS_MANAGE, group: "admin" },
+  { key: "storefront", label: "Storefront", route: "/storefront", icon: Store, permission: PERMISSIONS.STOREFRONT_MANAGE, group: "admin" },
   { key: "settings", label: "Settings", route: "/settings", icon: Settings, permission: PERMISSIONS.SETTINGS_MANAGE, group: "admin" },
 ];
 

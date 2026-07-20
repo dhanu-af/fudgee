@@ -24,6 +24,7 @@ export const PERMISSIONS = {
   REPORTS_READ: "reports:read",
   USERS_MANAGE: "users:manage",
   SETTINGS_MANAGE: "settings:manage",
+  STOREFRONT_MANAGE: "storefront:manage",
   // Deliberately not granted to admin — delete is reserved for super_admin
   // only, across every module, per Dhanu's explicit request.
   SYSTEM_DELETE: "system:delete",

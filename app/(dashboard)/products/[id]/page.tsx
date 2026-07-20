@@ -6,11 +6,12 @@ import { getProductById } from "@/modules/products/queries";
 import { updateProduct, deleteProduct } from "@/modules/products/actions";
 import { ProductForm } from "@/modules/products/components/product-form";
 import { DeleteRowButton } from "@/components/data-table/delete-row-button";
+import { getCategories } from "@/modules/storefront/queries";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requirePermission(PERMISSIONS.PRODUCTS_WRITE);
   const { id } = await params;
-  const product = await getProductById(id);
+  const [product, categories] = await Promise.all([getProductById(id), getCategories()]);
   if (!product) notFound();
 
   return (
@@ -24,7 +25,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           />
         )}
       </div>
-      <ProductForm action={updateProduct.bind(null, id)} product={product} />
+      <ProductForm action={updateProduct.bind(null, id)} product={product} categories={categories} />
     </div>
   );
 }

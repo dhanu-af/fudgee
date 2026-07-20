@@ -26,14 +26,23 @@ type Product = {
   costPrice: unknown;
   sellPrice: unknown;
   reorderPoint: unknown;
+  categoryId?: string | null;
+  imageUrl?: string | null;
+  shortDescription?: string | null;
+  isFeatured?: boolean;
+  isBestSeller?: boolean;
 };
+
+type Category = { id: string; name: string };
 
 export function ProductForm({
   action,
   product,
+  categories,
 }: {
   action: (prev: ProductFormState, formData: FormData) => Promise<ProductFormState>;
   product?: Product;
+  categories: Category[];
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -110,6 +119,50 @@ export function ProductForm({
           <Label htmlFor="reorderPoint">Reorder point</Label>
           <Input id="reorderPoint" name="reorderPoint" type="number" step="0.01" defaultValue={product?.reorderPoint as number | undefined} />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-4 rounded-lg border border-border/60 p-4">
+        <h2 className="text-sm font-semibold tracking-tight">Storefront (public site)</h2>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="categoryId">Category</Label>
+          <Select
+            name="categoryId"
+            defaultValue={product?.categoryId ?? ""}
+            items={{ "": "— None —", ...Object.fromEntries(categories.map((c) => [c.id, c.name])) }}
+          >
+            <SelectTrigger id="categoryId">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">— None —</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="imageUrl">Product photo URL</Label>
+          <Input id="imageUrl" name="imageUrl" defaultValue={product?.imageUrl ?? ""} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="shortDescription">Short description (for the shop card)</Label>
+          <Textarea id="shortDescription" name="shortDescription" defaultValue={product?.shortDescription ?? ""} />
+        </div>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="isFeatured" defaultChecked={product?.isFeatured ?? false} className="size-4" />
+          Show in &quot;Featured Products&quot;
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="isBestSeller" defaultChecked={product?.isBestSeller ?? false} className="size-4" />
+          Show in &quot;Best Sellers&quot;
+        </label>
       </div>
 
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}

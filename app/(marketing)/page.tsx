@@ -1,94 +1,67 @@
-import Link from "next/link";
-import {
-  Package,
-  Users,
-  ShoppingCart,
-  Truck,
-  Warehouse,
-  Factory,
-  FlaskConical,
-  BarChart3,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Metadata } from "next";
+import { getStorefrontHomepageData } from "@/modules/storefront/queries";
+import { HeroSection } from "@/components/storefront/hero-section";
+import { CategoriesSection } from "@/components/storefront/categories-section";
+import { ProductGridSection } from "@/components/storefront/product-grid-section";
+import { GallerySection } from "@/components/storefront/gallery-section";
+import { ReviewsSection } from "@/components/storefront/reviews-section";
+import { FaqSection } from "@/components/storefront/faq-section";
+import { AboutSection } from "@/components/storefront/about-section";
+import { ContactSection } from "@/components/storefront/contact-section";
 
-const features = [
-  {
-    icon: Package,
-    title: "Products & Customers",
-    description: "Track finished goods, raw materials, and packaging alongside your customer records.",
+export const metadata: Metadata = {
+  title: "Fudgee — Handcrafted Fudge & Confections",
+  description:
+    "Small-batch, handcrafted fudge and confections made with real cream and real butter. Shop our full range and order online for delivery.",
+  openGraph: {
+    title: "Fudgee — Handcrafted Fudge & Confections",
+    description: "Small-batch, handcrafted fudge and confections made with real cream and real butter.",
+    type: "website",
   },
-  {
-    icon: ShoppingCart,
-    title: "Sales Orders",
-    description: "Build multi-line sales orders and fulfill them straight against your live stock.",
-  },
-  {
-    icon: Truck,
-    title: "Purchase Orders & Suppliers",
-    description: "Raise purchase orders against your supplier list and receive stock in as it arrives.",
-  },
-  {
-    icon: Warehouse,
-    title: "Warehouse & Inventory",
-    description: "Manage storage locations and see on-hand stock levels, backed by a full transaction ledger.",
-  },
-  {
-    icon: Factory,
-    title: "Production",
-    description: "Plan production batches, track raw material inputs, and record finished-good output.",
-  },
-  {
-    icon: FlaskConical,
-    title: "Quality Control",
-    description: "Record pass/fail checks against production batches to keep quality accountable.",
-  },
-  {
-    icon: BarChart3,
-    title: "Reports",
-    description: "Order summaries, inventory valuation, production output, and QC pass rates in one place.",
-  },
-  {
-    icon: Users,
-    title: "Role-based access",
-    description: "Every user signs in with a role — Sales, Warehouse, Production, Finance, and more — that controls exactly what they can see and do.",
-  },
-];
+};
 
-export default function Home() {
+export default async function StorefrontHomePage() {
+  const { settings, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems } =
+    await getStorefrontHomepageData();
+
+  const shopableCategories = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    products: c.products,
+  }));
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between px-6 py-4">
-        <span className="text-lg font-semibold">Fudgee</span>
-        <Button render={<Link href="/login" />}>Sign In</Button>
-      </header>
-
-      <div className="flex flex-1 flex-col items-center gap-16 px-6 py-16">
-        <div className="flex max-w-2xl flex-col items-center gap-4 text-center">
-          <h1 className="text-4xl font-semibold tracking-tight">Fudgee</h1>
-          <p className="text-lg text-muted-foreground">
-            Manufacturing operations for food, pharmaceutical, and nutraceutical producers — orders,
-            inventory, production, and quality control in one system.
-          </p>
-          <Button render={<Link href="/login" />} className="mt-2">
-            Sign In
-          </Button>
-        </div>
-
-        <div className="grid w-full max-w-5xl gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {features.map((feature) => (
-            <Card key={feature.title} className="border-border/60">
-              <CardHeader className="flex-row items-center gap-2 space-y-0">
-                <feature.icon className="size-4 text-primary" />
-                <CardTitle className="text-sm font-medium">{feature.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </div>
+    <>
+      <HeroSection
+        heading={settings?.heroHeading ?? null}
+        subheading={settings?.heroSubheading ?? null}
+        imageUrl={settings?.heroImageUrl ?? null}
+      />
+      <CategoriesSection categories={shopableCategories} />
+      <ProductGridSection
+        id="featured"
+        eyebrow="Featured"
+        title="Featured Products"
+        subtitle="A few of our favourites, picked fresh from the kitchen."
+        products={featuredProducts}
+      />
+      <ProductGridSection
+        id="best-sellers"
+        eyebrow="Fan favourites"
+        title="Best Sellers"
+        subtitle="The flavours our customers keep coming back for."
+        products={bestSellerProducts}
+      />
+      <GallerySection items={galleryItems} />
+      <ReviewsSection reviews={reviews} />
+      <AboutSection
+        heading={settings?.aboutHeading ?? null}
+        body={settings?.aboutBody ?? null}
+        imageUrl={settings?.aboutImageUrl ?? null}
+      />
+      <FaqSection items={faqItems} />
+      <ContactSection settings={settings} />
+    </>
   );
 }

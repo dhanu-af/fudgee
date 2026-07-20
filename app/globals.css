@@ -10,6 +10,7 @@
   --font-sans: var(--font-inter);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-heading: var(--font-sans);
+  --font-display: var(--font-fredoka);
 
   /* Premium typography scale — larger, more readable sizes with tuned
      line-height and letter-spacing than Tailwind's compact defaults.
@@ -152,4 +153,28 @@
   html {
     @apply font-sans;
   }
+}
+
+/* --- Storefront (public site) palette ---
+   A separate, colourful light theme for the public marketing/shop pages,
+   scoped to .storefront so it never touches the dark Operations dashboard's
+   tokens above — forced regardless of the visitor's stored dark-mode
+   preference, since a bakery storefront isn't meant to follow that toggle. */
+.storefront,
+.dark .storefront {
+  --sf-bg: oklch(0.98 0.014 80);
+  --sf-bg-alt: oklch(0.955 0.02 75);
+  --sf-fg: oklch(0.28 0.05 30);
+  --sf-muted: oklch(0.48 0.03 30);
+  --sf-card: oklch(1 0 0);
+  --sf-border: oklch(0.9 0.03 70);
+  --sf-primary: oklch(0.62 0.13 300);
+  --sf-primary-foreground: oklch(0.99 0.01 300);
+  --sf-primary-soft: oklch(0.93 0.045 300);
+  --sf-accent: oklch(0.78 0.15 55);
+  --sf-accent-foreground: oklch(0.28 0.08 45);
+  --sf-accent-soft: oklch(0.94 0.06 55);
+
+  background: var(--sf-bg);
+  color: var(--sf-fg);
 }

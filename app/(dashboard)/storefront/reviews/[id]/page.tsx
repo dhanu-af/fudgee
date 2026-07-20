@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { can } from "@/lib/rbac/can";
-import { getReviewById } from "@/modules/storefront/queries";
+import { getReviewById, getProductsForReviewPicker } from "@/modules/storefront/queries";
 import { updateReview, deleteReview } from "@/modules/storefront/actions";
 import { ReviewForm } from "@/modules/storefront/components/review-form";
 import { DeleteRowButton } from "@/components/data-table/delete-row-button";
@@ -10,7 +10,7 @@ import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 export default async function EditReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
   const { id } = await params;
-  const review = await getReviewById(id);
+  const [review, products] = await Promise.all([getReviewById(id), getProductsForReviewPicker()]);
   if (!review) notFound();
 
   return (
@@ -24,7 +24,7 @@ export default async function EditReviewPage({ params }: { params: Promise<{ id:
           />
         )}
       </div>
-      <ReviewForm action={updateReview.bind(null, id)} review={review} />
+      <ReviewForm action={updateReview.bind(null, id)} review={review} products={products} />
     </div>
   );
 }

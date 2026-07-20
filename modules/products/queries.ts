@@ -5,5 +5,8 @@ export function getProducts() {
 }
 
 export function getProductById(id: string) {
-  return db.product.findUnique({ where: { id } });
+  return db.product.findUnique({
+    where: { id },
+    include: { images: { orderBy: { sortOrder: "asc" } } },
+  });
 }

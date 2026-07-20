@@ -6,8 +6,10 @@ import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { productSchema } from "@/modules/products/schema";
+import { productImageSchema } from "@/modules/storefront/schema";
 
 export type ProductFormState = { error?: string };
+export type ProductImageFormState = { error?: string };
 
 function productFormObject(formData: FormData) {
   return {
@@ -55,6 +57,46 @@ export async function updateProduct(
 
   revalidatePath("/products");
   redirect("/products");
+}
+
+// --- Product gallery photos (beyond the single primary imageUrl) ---
+// Adding/removing a gallery photo is an edit to the product's own record,
+// not a destructive action, so this stays on PRODUCTS_WRITE rather than
+// requiring SYSTEM_DELETE the way deleting the product itself does.
+
+export async function addProductImage(
+  productId: string,
+  _prev: ProductImageFormState,
+  formData: FormData
+): Promise<ProductImageFormState> {
+  await requirePermission(PERMISSIONS.PRODUCTS_WRITE);
+
+  const parsed = productImageSchema.safeParse({
+    productId,
+    imageUrl: formData.get("imageUrl"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.productImage.create({ data: parsed.data });
+
+  revalidatePath(`/products/${productId}`);
+  revalidatePath(`/shop/${productId}`);
+  return {};
+}
+
+export async function deleteProductImage(
+  id: string,
+  productId: string,
+  _prev: ProductImageFormState,
+  _formData: FormData
+): Promise<ProductImageFormState> {
+  await requirePermission(PERMISSIONS.PRODUCTS_WRITE);
+
+  await db.productImage.delete({ where: { id } }).catch(() => null);
+
+  revalidatePath(`/products/${productId}`);
+  revalidatePath(`/shop/${productId}`);
+  return {};
 }
 
 export async function deleteProduct(

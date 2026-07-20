@@ -5,6 +5,7 @@ import { can } from "@/lib/rbac/can";
 import { getProductById } from "@/modules/products/queries";
 import { updateProduct, deleteProduct } from "@/modules/products/actions";
 import { ProductForm } from "@/modules/products/components/product-form";
+import { ProductGalleryManager } from "@/modules/products/components/product-gallery-manager";
 import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 import { getCategories } from "@/modules/storefront/queries";
 
@@ -26,6 +27,14 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         )}
       </div>
       <ProductForm action={updateProduct.bind(null, id)} product={product} categories={categories} />
+
+      <div className="flex max-w-lg flex-col gap-2 rounded-lg border border-border/60 p-4">
+        <h2 className="text-sm font-semibold tracking-tight">Product gallery</h2>
+        <p className="text-xs text-muted-foreground">
+          Additional photos shown in the gallery on the product&apos;s public page, alongside the main photo above.
+        </p>
+        <ProductGalleryManager productId={id} images={product.images} />
+      </div>
     </div>
   );
 }

@@ -23,14 +23,19 @@ type Review = {
   isFeatured: boolean;
   sortOrder: number;
   isActive: boolean;
+  productId?: string | null;
 };
+
+type Product = { id: string; name: string };
 
 export function ReviewForm({
   action,
   review,
+  products,
 }: {
   action: (prev: StorefrontFormState, formData: FormData) => Promise<StorefrontFormState>;
   review?: Review;
+  products: Product[];
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -58,6 +63,26 @@ export function ReviewForm({
       <div className="flex flex-col gap-2">
         <Label htmlFor="body">Review text</Label>
         <Textarea id="body" name="body" required defaultValue={review?.body ?? ""} />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="productId">Which product is this for?</Label>
+        <Select
+          name="productId"
+          defaultValue={review?.productId ?? ""}
+          items={{ "": "— Site-wide (homepage) —", ...Object.fromEntries(products.map((p) => [p.id, p.name])) }}
+        >
+          <SelectTrigger id="productId">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">— Site-wide (homepage) —</SelectItem>
+            {products.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="sortOrder">Display order</Label>

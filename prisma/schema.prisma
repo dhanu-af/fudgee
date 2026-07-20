@@ -153,11 +153,34 @@ model Product {
   // --- Storefront marketing fields (all optional — purely additive, no
   // effect on the internal Products/Production/Inventory workflows) ---
   categoryId       String?
-  category         Category? @relation(fields: [categoryId], references: [id])
+  category         Category?      @relation(fields: [categoryId], references: [id])
   imageUrl         String?
   shortDescription String?
-  isFeatured       Boolean   @default(false)
-  isBestSeller     Boolean   @default(false)
+  isFeatured       Boolean        @default(false)
+  isBestSeller     Boolean        @default(false)
+  images           ProductImage[]
+  reviews          Review[]
+
+  // --- Storefront product detail page fields (all optional, free text —
+  // shown on the public product page only when filled in) ---
+  ingredients         String?
+  allergens           String?
+  nutritionInfo       String?
+  storageInstructions String?
+  weight              String?
+  shelfLife           String?
+  deliveryInfo        String?
+}
+
+// Additional photos for a product's public gallery, beyond the single
+// imageUrl already on Product (used as the primary/cover photo).
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  imageUrl  String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Customer {
@@ -460,6 +483,11 @@ model Review {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // Null = a general site-wide testimonial (shown on the homepage). Set =
+  // a review of that specific product, shown on its product detail page.
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model FaqItem {

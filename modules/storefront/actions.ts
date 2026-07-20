@@ -148,12 +148,14 @@ export async function createReview(_prev: StorefrontFormState, formData: FormDat
     isFeatured: formData.get("isFeatured") === "on",
     sortOrder: formData.get("sortOrder"),
     isActive: formData.get("isActive") === "on",
+    productId: formData.get("productId"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
 
   await db.review.create({ data: parsed.data });
 
   revalidatePath("/storefront/reviews");
+  if (parsed.data.productId) revalidatePath(`/shop/${parsed.data.productId}`);
   redirect("/storefront/reviews");
 }
 
@@ -171,12 +173,14 @@ export async function updateReview(
     isFeatured: formData.get("isFeatured") === "on",
     sortOrder: formData.get("sortOrder"),
     isActive: formData.get("isActive") === "on",
+    productId: formData.get("productId"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
 
   await db.review.update({ where: { id }, data: parsed.data });
 
   revalidatePath("/storefront/reviews");
+  if (parsed.data.productId) revalidatePath(`/shop/${parsed.data.productId}`);
   redirect("/storefront/reviews");
 }
 

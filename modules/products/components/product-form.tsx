@@ -32,6 +32,13 @@ type Product = {
   shortDescription?: string | null;
   isFeatured?: boolean;
   isBestSeller?: boolean;
+  ingredients?: string | null;
+  allergens?: string | null;
+  nutritionInfo?: string | null;
+  storageInstructions?: string | null;
+  weight?: string | null;
+  shelfLife?: string | null;
+  deliveryInfo?: string | null;
 };
 
 type Category = { id: string; name: string };
@@ -161,6 +168,44 @@ export function ProductForm({
           <input type="checkbox" name="isBestSeller" defaultChecked={product?.isBestSeller ?? false} className="size-4" />
           Show in &quot;Best Sellers&quot;
         </label>
+      </div>
+
+      <div className="flex flex-col gap-4 rounded-lg border border-border/60 p-4">
+        <h2 className="text-sm font-semibold tracking-tight">Product detail page</h2>
+        <p className="text-xs text-muted-foreground">
+          Shown on the product&apos;s public page — each section only appears once it&apos;s filled in.
+        </p>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="ingredients">Ingredients</Label>
+          <Textarea id="ingredients" name="ingredients" defaultValue={product?.ingredients ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="allergens">Allergens</Label>
+          <Textarea id="allergens" name="allergens" defaultValue={product?.allergens ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="nutritionInfo">Nutrition information</Label>
+          <Textarea id="nutritionInfo" name="nutritionInfo" defaultValue={product?.nutritionInfo ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="storageInstructions">Storage instructions</Label>
+          <Textarea id="storageInstructions" name="storageInstructions" defaultValue={product?.storageInstructions ?? ""} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="weight">Weight</Label>
+            <Input id="weight" name="weight" placeholder="e.g. 150g" defaultValue={product?.weight ?? ""} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="shelfLife">Shelf life</Label>
+            <Input id="shelfLife" name="shelfLife" placeholder="e.g. 3 months" defaultValue={product?.shelfLife ?? ""} />
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="deliveryInfo">Delivery information</Label>
+          <Textarea id="deliveryInfo" name="deliveryInfo" defaultValue={product?.deliveryInfo ?? ""} />
+        </div>
       </div>
 
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}

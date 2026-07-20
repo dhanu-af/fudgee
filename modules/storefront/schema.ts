@@ -40,6 +40,9 @@ export const reviewSchema = z.object({
   isFeatured: z.coerce.boolean(),
   sortOrder: z.coerce.number().int().default(0),
   isActive: z.coerce.boolean(),
+  // Blank = a general site-wide testimonial; set = a review of that
+  // specific product, shown on its product detail page instead.
+  productId: optionalText(64),
 });
 export type ReviewInput = z.infer<typeof reviewSchema>;
 
@@ -109,6 +112,14 @@ export const newsletterSignupSchema = z.object({
 });
 export type NewsletterSignupInput = z.infer<typeof newsletterSignupSchema>;
 
+export const productReviewSchema = z.object({
+  productId: z.string().min(1),
+  customerName: z.string().min(1, "Name is required").max(200),
+  rating: z.coerce.number().int().min(1).max(5),
+  body: z.string().min(1, "Review text is required").max(2000),
+});
+export type ProductReviewInput = z.infer<typeof productReviewSchema>;
+
 // Marketing fields grafted onto the existing Product create/edit forms.
 export const productMarketingSchema = z.object({
   categoryId: optionalText(64),
@@ -116,5 +127,18 @@ export const productMarketingSchema = z.object({
   shortDescription: optionalText(500),
   isFeatured: z.coerce.boolean(),
   isBestSeller: z.coerce.boolean(),
+  ingredients: optionalText(2000),
+  allergens: optionalText(1000),
+  nutritionInfo: optionalText(2000),
+  storageInstructions: optionalText(1000),
+  weight: optionalText(100),
+  shelfLife: optionalText(100),
+  deliveryInfo: optionalText(1000),
 });
 export type ProductMarketingInput = z.infer<typeof productMarketingSchema>;
+
+export const productImageSchema = z.object({
+  productId: z.string().min(1),
+  imageUrl: z.string().min(1, "Image URL is required").max(2000),
+});
+export type ProductImageInput = z.infer<typeof productImageSchema>;

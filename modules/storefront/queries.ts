@@ -19,11 +19,22 @@ export function getGalleryItemById(id: string) {
 }
 
 export function getReviews() {
-  return db.review.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] });
+  return db.review.findMany({
+    include: { product: { select: { name: true } } },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+  });
 }
 
 export function getReviewById(id: string) {
   return db.review.findUnique({ where: { id } });
+}
+
+// For the "which product is this review for?" picker on the admin Reviews
+// form — a plain list, not the fuller getShopProducts (no need to filter to
+// active/finished-good here since an admin should be able to link a review
+// to any product).
+export function getProductsForReviewPicker() {
+  return db.product.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
 }
 
 export function getFaqItems() {
@@ -77,7 +88,9 @@ export async function getStorefrontHomepageData() {
       }),
       db.galleryItem.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
       db.review.findMany({
-        where: { isActive: true, isFeatured: true },
+        // Product-linked reviews live on their own product page instead —
+        // keeps the homepage testimonials to general, site-wide reviews.
+        where: { isActive: true, isFeatured: true, productId: null },
         orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       }),
       db.faqItem.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
@@ -94,4 +107,29 @@ export function getShopProducts() {
     orderBy: { name: "asc" },
     include: { category: true },
   });
+}
+
+// Public product detail page: the product plus its gallery photos and
+// approved (isActive) reviews, with a 1-5 star count breakdown for the
+// rating summary bar chart.
+export async function getPublicProductDetail(id: string) {
+  const product = await db.product.findFirst({
+    where: { id, status: "ACTIVE", type: "FINISHED_GOOD" },
+    include: {
+      category: true,
+      images: { orderBy: { sortOrder: "asc" } },
+      reviews: { where: { isActive: true }, orderBy: { createdAt: "desc" } },
+    },
+  });
+  if (!product) return null;
+
+  const breakdown = [5, 4, 3, 2, 1].map((stars) => ({
+    stars,
+    count: product.reviews.filter((r) => r.rating === stars).length,
+  }));
+  const reviewCount = product.reviews.length;
+  const averageRating =
+    reviewCount > 0 ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount : null;
+
+  return { product, breakdown, reviewCount, averageRating };
 }

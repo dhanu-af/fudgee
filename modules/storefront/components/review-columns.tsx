@@ -10,6 +10,7 @@ export type ReviewRow = {
   rating: number;
   isFeatured: boolean;
   isActive: boolean;
+  product: { name: string } | null;
 };
 
 export const reviewColumns: ColumnDef<ReviewRow>[] = [
@@ -21,6 +22,11 @@ export const reviewColumns: ColumnDef<ReviewRow>[] = [
         {row.original.customerName}
       </Link>
     ),
+  },
+  {
+    id: "product",
+    header: "For",
+    cell: ({ row }) => row.original.product?.name ?? <span className="text-muted-foreground">Site-wide</span>,
   },
   {
     accessorKey: "rating",

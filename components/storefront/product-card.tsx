@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ShoppingBag, Check } from "lucide-react";
 import { useCart } from "@/lib/storefront/cart-context";
 
@@ -32,7 +33,7 @@ export function ProductCard({ product, index = 0 }: { product: StorefrontProduct
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-3xl bg-[var(--sf-card)] ring-1 ring-[var(--sf-border)] transition-shadow hover:shadow-lg hover:shadow-[var(--sf-primary)]/10">
-      <div className="relative aspect-square overflow-hidden">
+      <Link href={`/shop/${product.id}`} className="relative block aspect-square overflow-hidden">
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -52,10 +53,14 @@ export function ProductCard({ product, index = 0 }: { product: StorefrontProduct
             {product.category.name}
           </span>
         )}
-      </div>
+      </Link>
 
       <div className="flex flex-1 flex-col gap-2 p-5">
-        <h3 className="font-display text-lg font-semibold tracking-tight text-[var(--sf-fg)]">{product.name}</h3>
+        <Link href={`/shop/${product.id}`}>
+          <h3 className="font-display text-lg font-semibold tracking-tight text-[var(--sf-fg)] hover:underline">
+            {product.name}
+          </h3>
+        </Link>
         {product.shortDescription && (
           <p className="line-clamp-2 flex-1 text-sm text-[var(--sf-muted)]">{product.shortDescription}</p>
         )}

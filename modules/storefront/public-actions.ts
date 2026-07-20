@@ -7,6 +7,7 @@ import {
   checkoutLineSchema,
   contactMessageSchema,
   newsletterSignupSchema,
+  productReviewSchema,
 } from "@/modules/storefront/schema";
 import { z } from "zod";
 
@@ -103,6 +104,39 @@ export async function submitContactMessage(_prev: ContactFormState, formData: Fo
 
   await db.contactMessage.create({ data: parsed.data });
   revalidatePath("/storefront/messages");
+
+  return { success: true };
+}
+
+export type ProductReviewFormState = { error?: string; success?: boolean };
+
+export async function submitProductReview(
+  _prev: ProductReviewFormState,
+  formData: FormData
+): Promise<ProductReviewFormState> {
+  const parsed = productReviewSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Please check your review and try again." };
+  }
+
+  const product = await db.product.findUnique({ where: { id: parsed.data.productId } });
+  if (!product) return { error: "This product could not be found." };
+
+  // Held for moderation — an admin approves it from Storefront > Reviews
+  // (the same isActive toggle used for site-wide testimonials) before it
+  // appears on the product page.
+  await db.review.create({
+    data: {
+      customerName: parsed.data.customerName,
+      rating: parsed.data.rating,
+      body: parsed.data.body,
+      productId: parsed.data.productId,
+      isActive: false,
+      isFeatured: false,
+    },
+  });
+
+  revalidatePath("/storefront/reviews");
 
   return { success: true };
 }

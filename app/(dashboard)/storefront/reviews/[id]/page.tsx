@@ -17,7 +17,7 @@ export default async function EditReviewPage({ params }: { params: Promise<{ id:
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Edit review</h1>
-        {can(session, PERMISSIONS.SYSTEM_DELETE) && (
+        {can(session, PERMISSIONS.STOREFRONT_DELETE) && (
           <DeleteRowButton
             action={deleteReview.bind(null, id)}
             confirmMessage={`Delete this review from "${review.customerName}"? This cannot be undone.`}

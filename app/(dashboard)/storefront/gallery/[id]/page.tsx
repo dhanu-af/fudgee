@@ -17,7 +17,7 @@ export default async function EditGalleryItemPage({ params }: { params: Promise<
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Edit gallery photo</h1>
-        {can(session, PERMISSIONS.SYSTEM_DELETE) && (
+        {can(session, PERMISSIONS.STOREFRONT_DELETE) && (
           <DeleteRowButton
             action={deleteGalleryItem.bind(null, id)}
             confirmMessage="Delete this photo? This cannot be undone."

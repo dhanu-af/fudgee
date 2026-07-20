@@ -17,7 +17,7 @@ export default async function EditFaqItemPage({ params }: { params: Promise<{ id
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Edit FAQ question</h1>
-        {can(session, PERMISSIONS.SYSTEM_DELETE) && (
+        {can(session, PERMISSIONS.STOREFRONT_DELETE) && (
           <DeleteRowButton
             action={deleteFaqItem.bind(null, id)}
             confirmMessage="Delete this FAQ item? This cannot be undone."

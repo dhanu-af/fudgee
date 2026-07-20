@@ -68,7 +68,7 @@ export async function deleteCategory(
   _prev: StorefrontFormState,
   _formData: FormData
 ): Promise<StorefrontFormState> {
-  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
 
   try {
     await db.category.delete({ where: { id } });
@@ -128,7 +128,7 @@ export async function deleteGalleryItem(
   _prev: StorefrontFormState,
   _formData: FormData
 ): Promise<StorefrontFormState> {
-  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
 
   await db.galleryItem.delete({ where: { id } }).catch(() => null);
 
@@ -185,7 +185,7 @@ export async function deleteReview(
   _prev: StorefrontFormState,
   _formData: FormData
 ): Promise<StorefrontFormState> {
-  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
 
   await db.review.delete({ where: { id } }).catch(() => null);
 
@@ -238,7 +238,7 @@ export async function deleteFaqItem(
   _prev: StorefrontFormState,
   _formData: FormData
 ): Promise<StorefrontFormState> {
-  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
 
   await db.faqItem.delete({ where: { id } }).catch(() => null);
 
@@ -287,7 +287,7 @@ export async function deleteContactMessage(
   _prev: StorefrontFormState,
   _formData: FormData
 ): Promise<StorefrontFormState> {
-  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
   await db.contactMessage.delete({ where: { id } }).catch(() => null);
   revalidatePath("/storefront/messages");
   redirect("/storefront/messages");
@@ -298,7 +298,7 @@ export async function deleteNewsletterSignup(
   _prev: StorefrontFormState,
   _formData: FormData
 ): Promise<StorefrontFormState> {
-  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
   await db.newsletterSignup.delete({ where: { id } }).catch(() => null);
   revalidatePath("/storefront/newsletter");
   redirect("/storefront/newsletter");

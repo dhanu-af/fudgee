@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ImageUploadField } from "@/modules/storefront/components/image-upload-field";
 import type { ProductFormState } from "@/modules/products/actions";
 
 type Product = {
@@ -145,10 +146,7 @@ export function ProductForm({
           </Select>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="imageUrl">Product photo URL</Label>
-          <Input id="imageUrl" name="imageUrl" defaultValue={product?.imageUrl ?? ""} />
-        </div>
+        <ImageUploadField name="imageUrl" label="Product photo" defaultValue={product?.imageUrl} />
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="shortDescription">Short description (for the shop card)</Label>

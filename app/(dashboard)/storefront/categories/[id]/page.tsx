@@ -17,7 +17,7 @@ export default async function EditCategoryPage({ params }: { params: Promise<{ i
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Edit category</h1>
-        {can(session, PERMISSIONS.SYSTEM_DELETE) && (
+        {can(session, PERMISSIONS.STOREFRONT_DELETE) && (
           <DeleteRowButton
             action={deleteCategory.bind(null, id)}
             confirmMessage={`Delete "${category.name}"? This cannot be undone.`}

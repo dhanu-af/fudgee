@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ImageUploadField } from "@/modules/storefront/components/image-upload-field";
 import type { StorefrontFormState } from "@/modules/storefront/actions";
 
 type GalleryItem = {
@@ -26,11 +27,7 @@ export function GalleryForm({
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="imageUrl">Image URL</Label>
-        <Input id="imageUrl" name="imageUrl" required defaultValue={item?.imageUrl} />
-        <p className="text-xs text-muted-foreground">A hosted image link (e.g. from your phone&apos;s cloud photo backup).</p>
-      </div>
+      <ImageUploadField name="imageUrl" label="Photo" defaultValue={item?.imageUrl} required />
       <div className="flex flex-col gap-2">
         <Label htmlFor="caption">Caption</Label>
         <Input id="caption" name="caption" defaultValue={item?.caption ?? ""} />

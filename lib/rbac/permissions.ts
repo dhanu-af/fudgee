@@ -28,6 +28,12 @@ export const PERMISSIONS = {
   // Deliberately not granted to admin — delete is reserved for super_admin
   // only, across every module, per Dhanu's explicit request.
   SYSTEM_DELETE: "system:delete",
+  // A narrow carve-out: Admin may delete Storefront/CMS content (categories,
+  // gallery, reviews, FAQ, contact messages, newsletter signups) — lower
+  // stakes than operational records — without touching SYSTEM_DELETE's
+  // super-admin-only rule anywhere else. Deleting a Product itself still
+  // requires SYSTEM_DELETE, since that's shared with the rest of the app.
+  STOREFRONT_DELETE: "storefront:delete",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

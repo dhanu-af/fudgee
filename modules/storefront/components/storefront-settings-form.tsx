@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUploadField } from "@/modules/storefront/components/image-upload-field";
 import { updateStorefrontSettings } from "@/modules/storefront/actions";
 
 type StorefrontSettings = {
@@ -36,10 +37,7 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
           <Label htmlFor="heroSubheading">Subheading</Label>
           <Textarea id="heroSubheading" name="heroSubheading" defaultValue={settings?.heroSubheading ?? ""} />
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="heroImageUrl">Hero image URL</Label>
-          <Input id="heroImageUrl" name="heroImageUrl" defaultValue={settings?.heroImageUrl ?? ""} />
-        </div>
+        <ImageUploadField name="heroImageUrl" label="Hero image" defaultValue={settings?.heroImageUrl} />
       </section>
 
       <section className="flex flex-col gap-4">
@@ -52,10 +50,7 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
           <Label htmlFor="aboutBody">Body</Label>
           <Textarea id="aboutBody" name="aboutBody" rows={5} defaultValue={settings?.aboutBody ?? ""} />
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="aboutImageUrl">About image URL</Label>
-          <Input id="aboutImageUrl" name="aboutImageUrl" defaultValue={settings?.aboutImageUrl ?? ""} />
-        </div>
+        <ImageUploadField name="aboutImageUrl" label="About image" defaultValue={settings?.aboutImageUrl} />
       </section>
 
       <section className="flex flex-col gap-4">

@@ -66,6 +66,11 @@ export const storefrontSettingsSchema = z.object({
     .transform((v) => (v === "" || v === undefined ? null : v)),
   contactPhone: optionalText(50),
   contactAddress: optionalText(500),
+  openingHours: optionalText(500),
+  whatsappNumber: optionalText(50),
+  instagramUrl: optionalText(300),
+  facebookUrl: optionalText(300),
+  tiktokUrl: optionalText(300),
   newsletterHeading: optionalText(200),
   newsletterSubheading: optionalText(500),
 });

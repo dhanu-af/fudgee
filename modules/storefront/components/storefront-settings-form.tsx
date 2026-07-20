@@ -18,6 +18,11 @@ type StorefrontSettings = {
   contactEmail: string | null;
   contactPhone: string | null;
   contactAddress: string | null;
+  openingHours: string | null;
+  whatsappNumber: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  tiktokUrl: string | null;
   newsletterHeading: string | null;
   newsletterSubheading: string | null;
 } | null;
@@ -66,6 +71,55 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
         <div className="flex flex-col gap-2">
           <Label htmlFor="contactAddress">Address</Label>
           <Textarea id="contactAddress" name="contactAddress" defaultValue={settings?.contactAddress ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="openingHours">Opening hours</Label>
+          <Textarea
+            id="openingHours"
+            name="openingHours"
+            placeholder={"Mon–Fri: 9am – 5pm\nSat: 10am – 2pm\nSun: Closed"}
+            defaultValue={settings?.openingHours ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="whatsappNumber">WhatsApp number</Label>
+          <Input
+            id="whatsappNumber"
+            name="whatsappNumber"
+            placeholder="+61 4XX XXX XXX"
+            defaultValue={settings?.whatsappNumber ?? ""}
+          />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold tracking-tight">Social media</h2>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="instagramUrl">Instagram URL</Label>
+          <Input
+            id="instagramUrl"
+            name="instagramUrl"
+            placeholder="https://instagram.com/yourhandle"
+            defaultValue={settings?.instagramUrl ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="facebookUrl">Facebook URL</Label>
+          <Input
+            id="facebookUrl"
+            name="facebookUrl"
+            placeholder="https://facebook.com/yourpage"
+            defaultValue={settings?.facebookUrl ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="tiktokUrl">TikTok URL</Label>
+          <Input
+            id="tiktokUrl"
+            name="tiktokUrl"
+            placeholder="https://tiktok.com/@yourhandle"
+            defaultValue={settings?.tiktokUrl ?? ""}
+          />
         </div>
       </section>
 

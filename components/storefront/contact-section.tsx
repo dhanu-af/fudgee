@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, MessageCircle } from "lucide-react";
 import { Reveal } from "@/components/storefront/reveal";
 import { submitContactMessage } from "@/modules/storefront/public-actions";
 
@@ -9,6 +9,8 @@ type StorefrontSettings = {
   contactEmail: string | null;
   contactPhone: string | null;
   contactAddress: string | null;
+  openingHours: string | null;
+  whatsappNumber: string | null;
 } | null;
 
 export function ContactSection({ settings }: { settings: StorefrontSettings }) {
@@ -46,6 +48,25 @@ export function ContactSection({ settings }: { settings: StorefrontSettings }) {
               <li className="flex items-start gap-3">
                 <MapPin className="mt-0.5 size-4 shrink-0 text-[var(--sf-primary)]" />
                 <span>{settings.contactAddress}</span>
+              </li>
+            )}
+            {settings?.whatsappNumber && (
+              <li className="flex items-center gap-3">
+                <MessageCircle className="size-4 text-[var(--sf-primary)]" />
+                <a
+                  href={`https://wa.me/${settings.whatsappNumber.replace(/[^\d]/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  Chat on WhatsApp
+                </a>
+              </li>
+            )}
+            {settings?.openingHours && (
+              <li className="flex items-start gap-3">
+                <Clock className="mt-0.5 size-4 shrink-0 text-[var(--sf-primary)]" />
+                <span className="whitespace-pre-line">{settings.openingHours}</span>
               </li>
             )}
           </ul>

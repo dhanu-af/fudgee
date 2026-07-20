@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { Camera, Share2, Mail, Phone, MapPin } from "lucide-react";
+import { Camera, Share2, Music2, Mail, Phone, MapPin } from "lucide-react";
 import { NewsletterForm } from "@/components/storefront/newsletter-form";
 
 type StorefrontSettings = {
   contactEmail: string | null;
   contactPhone: string | null;
   contactAddress: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  tiktokUrl: string | null;
   newsletterHeading: string | null;
   newsletterSubheading: string | null;
 } | null;
@@ -33,14 +36,43 @@ export function StorefrontFooter({ settings }: { settings: StorefrontSettings })
             <p className="mt-2 max-w-xs text-sm text-white/70">
               Small-batch, handcrafted fudge and confections — made with love, delivered with care.
             </p>
-            <div className="mt-4 flex gap-3">
-              <a href="#" aria-label="Instagram" className="flex size-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20">
-                <Camera className="size-4" />
-              </a>
-              <a href="#" aria-label="Facebook" className="flex size-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20">
-                <Share2 className="size-4" />
-              </a>
-            </div>
+            {(settings?.instagramUrl || settings?.facebookUrl || settings?.tiktokUrl) && (
+              <div className="mt-4 flex gap-3">
+                {settings?.instagramUrl && (
+                  <a
+                    href={settings.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    className="flex size-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+                  >
+                    <Camera className="size-4" />
+                  </a>
+                )}
+                {settings?.facebookUrl && (
+                  <a
+                    href={settings.facebookUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook"
+                    className="flex size-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+                  >
+                    <Share2 className="size-4" />
+                  </a>
+                )}
+                {settings?.tiktokUrl && (
+                  <a
+                    href={settings.tiktokUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="TikTok"
+                    className="flex size-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+                  >
+                    <Music2 className="size-4" />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

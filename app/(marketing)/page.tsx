@@ -9,6 +9,13 @@ import { FaqSection } from "@/components/storefront/faq-section";
 import { AboutSection } from "@/components/storefront/about-section";
 import { ContactSection } from "@/components/storefront/contact-section";
 
+// Content here is admin-editable via the Storefront CMS, and this page's
+// build-time static prerender was already racing DB migrations twice this
+// session (a `next build` queries the live DB during "Generating static
+// pages", so it fails if a just-added column hasn't been applied yet).
+// Rendering per-request instead removes that class of bug entirely.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Fudgee — Handcrafted Fudge & Confections",
   description:

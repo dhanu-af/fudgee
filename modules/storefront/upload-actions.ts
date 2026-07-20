@@ -33,9 +33,13 @@ export async function uploadStorefrontImage(
       access: "public",
     });
     return { url: blob.url };
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    // Logged (not just swallowed) so the real cause shows up in Vercel's
+    // runtime logs instead of only ever seeing a generic fallback message.
+    console.error("uploadStorefrontImage failed:", message);
     return {
-      error: "Upload failed — Blob storage may not be set up for this project yet. Paste an image URL instead for now.",
+      error: `Upload failed: ${message}`,
     };
   }
 }

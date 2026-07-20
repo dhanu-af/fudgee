@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { MODULE_REGISTRY } from "@/lib/registry/modules";
+import { SUPER_ADMIN_ROLE_KEY } from "@/lib/rbac/permissions";
 import { getStockLevels } from "@/modules/inventory/queries";
 
 const BUILT_MODULE_KEYS = new Set([
@@ -37,7 +38,12 @@ export async function getDashboardData() {
     db.product.groupBy({ by: ["type"], _count: { _all: true } }),
     db.product.findMany({ orderBy: { createdAt: "desc" }, take: 5, select: { id: true, name: true, sku: true, createdAt: true } }),
     db.customer.findMany({ orderBy: { createdAt: "desc" }, take: 5, select: { id: true, name: true, createdAt: true } }),
-    db.user.findMany({ orderBy: { createdAt: "desc" }, take: 5, select: { id: true, name: true, createdAt: true } }),
+    db.user.findMany({
+      where: { role: { key: { not: SUPER_ADMIN_ROLE_KEY } } },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, name: true, createdAt: true },
+    }),
     db.product.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
     db.customer.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
   ]);

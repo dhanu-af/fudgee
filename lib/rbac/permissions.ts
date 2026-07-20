@@ -1,3 +1,8 @@
+// The Super Admin role is reserved exclusively for Dhanu's account. It must
+// never be selectable, visible, or editable by any other role — every query
+// and action touching users/roles filters on this key.
+export const SUPER_ADMIN_ROLE_KEY = "super_admin";
+
 export const PERMISSIONS = {
   DASHBOARD_VIEW: "dashboard:view",
   PRODUCTS_READ: "products:read",

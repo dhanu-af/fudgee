@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { gstComponent } from "@/lib/storefront/gst";
 import { checkoutSchema, checkoutLineSchema } from "@/modules/storefront/schema";
 
@@ -102,7 +102,7 @@ export async function createStripeCheckout(
 
   let checkoutUrl: string | null;
   try {
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       mode: "payment",
       customer_email: parsed.data.email,
       line_items: lines.map((line) => ({

@@ -30,7 +30,7 @@ export function StorefrontFooter({ settings }: { settings: StorefrontSettings })
           <NewsletterForm variant="dark" />
         </div>
 
-        <div className="grid gap-10 pt-10 sm:grid-cols-3">
+        <div className="grid gap-10 sm:grid-cols-2 pt-10 lg:grid-cols-4">
           <div>
             <div className="font-display text-xl font-semibold text-[var(--sf-primary-soft)]">fudgee.</div>
             <p className="mt-2 max-w-xs text-sm text-white/70">
@@ -106,6 +106,15 @@ export function StorefrontFooter({ settings }: { settings: StorefrontSettings })
                   <span>{settings.contactAddress}</span>
                 </li>
               )}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-white/50">Legal</h3>
+            <ul className="mt-3 flex flex-col gap-2 text-sm text-white/80">
+              <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
+              <li><Link href="/cookies" className="hover:text-white">Cookie Policy</Link></li>
             </ul>
           </div>
         </div>

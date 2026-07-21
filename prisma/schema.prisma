@@ -300,20 +300,36 @@ enum SalesOrderStatus {
   CANCELLED
 }
 
+// Payment state for storefront checkouts via Stripe. Manually-entered orders
+// (created outside the storefront) stay UNPAID indefinitely, which is fine —
+// this only matters for orders that went through Stripe Checkout.
+enum SalesOrderPaymentStatus {
+  UNPAID
+  PAID
+  FAILED
+  REFUNDED
+}
+
 model SalesOrder {
-  id            String           @id @default(cuid())
-  seq           Int              @default(autoincrement())
-  customerId    String
-  status        SalesOrderStatus @default(DRAFT)
-  orderDate     DateTime         @default(now())
-  requestedDate DateTime?
-  notes         String?
-  subtotal      Decimal          @db.Decimal(14, 4)
-  total         Decimal          @db.Decimal(14, 4)
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  customer      Customer         @relation(fields: [customerId], references: [id])
-  lines         SalesOrderLine[]
+  id                      String                  @id @default(cuid())
+  seq                     Int                     @default(autoincrement())
+  customerId              String
+  status                  SalesOrderStatus        @default(DRAFT)
+  orderDate               DateTime                @default(now())
+  requestedDate           DateTime?
+  notes                   String?
+  subtotal                Decimal                 @db.Decimal(14, 4)
+  total                   Decimal                 @db.Decimal(14, 4)
+  // GST component of `total` (Australian 10%, backed out of the
+  // GST-inclusive price as total/11) — stored for BAS/tax reporting.
+  gstAmount               Decimal?                @db.Decimal(14, 4)
+  paymentStatus           SalesOrderPaymentStatus @default(UNPAID)
+  stripeCheckoutSessionId String?                  @unique
+  stripePaymentIntentId   String?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+  customer                Customer                @relation(fields: [customerId], references: [id])
+  lines                   SalesOrderLine[]
 }
 
 model SalesOrderLine {

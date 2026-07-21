@@ -29,7 +29,10 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
           <h1 className="text-xl font-semibold">{`SO-${String(so.seq).padStart(4, "0")}`}</h1>
           <p className="text-sm text-muted-foreground">{so.customer.name}</p>
         </div>
-        <Badge>{so.status}</Badge>
+        <div className="flex gap-2">
+          <Badge>{so.status}</Badge>
+          <Badge variant={so.paymentStatus === "PAID" ? "default" : "secondary"}>{so.paymentStatus}</Badge>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
@@ -70,6 +73,12 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
           <span className="text-muted-foreground">Subtotal</span>
           <span>{String(so.subtotal)}</span>
         </div>
+        {so.gstAmount !== null && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Includes GST</span>
+            <span>{String(so.gstAmount)}</span>
+          </div>
+        )}
         <div className="flex justify-between font-medium">
           <span>Total</span>
           <span>{String(so.total)}</span>

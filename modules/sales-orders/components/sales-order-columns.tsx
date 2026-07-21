@@ -8,6 +8,7 @@ export type SalesOrderRow = {
   id: string;
   seq: number;
   status: string;
+  paymentStatus: string;
   orderDate: Date;
   total: unknown;
   customer: { name: string };
@@ -18,6 +19,13 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
   CONFIRMED: "outline",
   FULFILLED: "default",
   CANCELLED: "destructive",
+};
+
+const paymentStatusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  UNPAID: "secondary",
+  PAID: "default",
+  FAILED: "destructive",
+  REFUNDED: "outline",
 };
 
 export const salesOrderColumns: ColumnDef<SalesOrderRow>[] = [
@@ -41,6 +49,15 @@ export const salesOrderColumns: ColumnDef<SalesOrderRow>[] = [
     header: "Status",
     cell: ({ row }) => (
       <Badge variant={statusVariant[row.original.status] ?? "secondary"}>{row.original.status}</Badge>
+    ),
+  },
+  {
+    accessorKey: "paymentStatus",
+    header: "Payment",
+    cell: ({ row }) => (
+      <Badge variant={paymentStatusVariant[row.original.paymentStatus] ?? "secondary"}>
+        {row.original.paymentStatus}
+      </Badge>
     ),
   },
   { accessorKey: "total", header: "Total", cell: ({ row }) => String(row.original.total) },

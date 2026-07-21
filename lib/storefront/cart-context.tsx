@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { gstComponent } from "@/lib/storefront/gst";
 
 export type CartItem = {
   productId: string;
@@ -17,6 +18,7 @@ type CartContextValue = {
   removeItem: (productId: string) => void;
   clear: () => void;
   subtotal: number;
+  gst: number;
   count: number;
 };
 
@@ -72,10 +74,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const gst = gstComponent(subtotal);
   const count = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, updateQuantity, removeItem, clear, subtotal, count }}>
+    <CartContext.Provider value={{ items, addItem, updateQuantity, removeItem, clear, subtotal, gst, count }}>
       {children}
     </CartContext.Provider>
   );

@@ -75,6 +75,7 @@ model User {
   updatedAt             DateTime               @updatedAt
   inventoryTransactions InventoryTransaction[]
   qualityChecks         QualityCheck[]
+  dispatchedShipments   Shipment[]
 
   @@index([roleId])
 }
@@ -149,6 +150,7 @@ model Product {
   recipe                Recipe?
   recipeLineUsages      RecipeLine[]
   batchCalcLineUsages   BatchCalculationLine[]
+  packageItemUsages     PackageItem[]
 
   // --- Storefront marketing fields (all optional — purely additive, no
   // effect on the internal Products/Production/Inventory workflows) ---
@@ -195,6 +197,7 @@ model Customer {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   salesOrders     SalesOrder[]
+  returns         Return[]
 }
 
 // Its own table (not a text field) so Phase 2 can promote it to a full
@@ -293,9 +296,16 @@ model PurchaseOrderLine {
 
 // --- Sales Orders (M3) ---
 
+// PACKED/DISPATCHED/DELIVERED are the Shipping module's flow (Confirmed ->
+// Packed -> Dispatched -> Delivered). FULFILLED stays as the older one-step
+// path for orders not going through Shipping — both are valid terminal-ish
+// states, neither is "wrong."
 enum SalesOrderStatus {
   DRAFT
   CONFIRMED
+  PACKED
+  DISPATCHED
+  DELIVERED
   FULFILLED
   CANCELLED
 }
@@ -330,17 +340,19 @@ model SalesOrder {
   updatedAt               DateTime                @updatedAt
   customer                Customer                @relation(fields: [customerId], references: [id])
   lines                   SalesOrderLine[]
+  shipment                Shipment?
 }
 
 model SalesOrderLine {
-  id           String     @id @default(cuid())
+  id           String         @id @default(cuid())
   salesOrderId String
   productId    String
-  quantity     Decimal    @db.Decimal(14, 4)
-  unitPrice    Decimal    @db.Decimal(14, 4)
-  lineTotal    Decimal    @db.Decimal(14, 4)
-  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
-  product      Product    @relation(fields: [productId], references: [id])
+  quantity     Decimal        @db.Decimal(14, 4)
+  unitPrice    Decimal        @db.Decimal(14, 4)
+  lineTotal    Decimal        @db.Decimal(14, 4)
+  salesOrder   SalesOrder     @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  product      Product        @relation(fields: [productId], references: [id])
+  shipmentItems ShipmentItem[]
 }
 
 // --- Recipes / formulations ---
@@ -555,4 +567,137 @@ model NewsletterSignup {
   id        String   @id @default(cuid())
   email     String   @unique
   createdAt DateTime @default(now())
+}
+
+// --- Shipping (M6) ---
+// One Shipment per Sales Order (no partial/split shipments in this phase —
+// salesOrderId is unique below). Dispatch is a status + captured detail on
+// Shipment itself, not a separate table, since it's a transition, not a
+// standalone record. Inventory is deducted here (at DISPATCHED), not at
+// Sales Order confirmation/fulfillment — see dispatchShipment().
+
+enum ShipmentStatus {
+  WAITING
+  PICKING
+  PACKING
+  PACKED
+  READY_TO_DISPATCH
+  DISPATCHED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  RETURNED
+  CANCELLED
+}
+
+model Carrier {
+  id           String     @id @default(cuid())
+  name         String
+  contactPhone String?
+  contactEmail String?
+  isActive     Boolean    @default(true)
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  shipments    Shipment[]
+}
+
+model Shipment {
+  id               String          @id @default(cuid())
+  seq              Int             @default(autoincrement())
+  salesOrderId     String          @unique
+  carrierId        String?
+  trackingNumber   String?
+  status           ShipmentStatus  @default(WAITING)
+  stockReserved    Boolean         @default(false)
+  shipDate         DateTime?
+  freightCost      Decimal?        @db.Decimal(14, 4)
+  // Snapshot at creation time — SalesOrder/Customer don't store one, and an
+  // address shouldn't silently change on an in-flight shipment if the
+  // customer record is edited later.
+  deliveryAddress  String?
+  dispatchedAt     DateTime?
+  dispatchedByUserId String?
+  driverName       String?
+  vehicleInfo      String?
+  numberOfCartons  Int?
+  signedBy         String?
+  dispatchNotes    String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  salesOrder       SalesOrder      @relation(fields: [salesOrderId], references: [id])
+  carrier          Carrier?        @relation(fields: [carrierId], references: [id])
+  dispatchedByUser User?           @relation(fields: [dispatchedByUserId], references: [id])
+  items            ShipmentItem[]
+  packages         Package[]
+  trackingEvents   TrackingEvent[]
+  returns          Return[]
+}
+
+model ShipmentItem {
+  id               String         @id @default(cuid())
+  shipmentId       String
+  salesOrderLineId String
+  quantity         Decimal        @db.Decimal(14, 4)
+  shipment         Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  salesOrderLine   SalesOrderLine @relation(fields: [salesOrderLineId], references: [id])
+}
+
+model Package {
+  id         String        @id @default(cuid())
+  shipmentId String
+  boxType    String?
+  weight     Decimal?      @db.Decimal(10, 3)
+  lengthCm   Decimal?      @db.Decimal(8, 2)
+  widthCm    Decimal?      @db.Decimal(8, 2)
+  heightCm   Decimal?      @db.Decimal(8, 2)
+  photoUrl   String?
+  createdAt  DateTime      @default(now())
+  shipment   Shipment      @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  items      PackageItem[]
+}
+
+model PackageItem {
+  id        String  @id @default(cuid())
+  packageId String
+  productId String
+  quantity  Decimal @db.Decimal(14, 4)
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model TrackingEvent {
+  id         String   @id @default(cuid())
+  shipmentId String
+  status     String
+  location   String?
+  note       String?
+  occurredAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+}
+
+enum ReturnStatus {
+  REQUESTED
+  INSPECTING
+  APPROVED
+  REJECTED
+  REFUNDED
+  REPLACED
+}
+
+model Return {
+  id              String       @id @default(cuid())
+  seq             Int          @default(autoincrement())
+  customerId      String
+  shipmentId      String?
+  reason          String
+  quantity        Decimal      @db.Decimal(14, 4)
+  inspectionNotes String?
+  refundAmount    Decimal?     @db.Decimal(14, 4)
+  status          ReturnStatus @default(REQUESTED)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  customer        Customer     @relation(fields: [customerId], references: [id])
+  shipment        Shipment?    @relation(fields: [shipmentId], references: [id])
 }

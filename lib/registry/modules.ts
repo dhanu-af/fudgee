@@ -12,6 +12,7 @@ import {
   UserCog,
   Settings,
   Store,
+  Boxes,
 } from "lucide-react";
 import { PERMISSIONS, type PermissionKey } from "@/lib/rbac/permissions";
 
@@ -37,6 +38,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
   { key: "warehouse", label: "Warehouse", route: "/warehouse", icon: Warehouse, permission: PERMISSIONS.WAREHOUSE_READ, group: "operations" },
   { key: "production", label: "Production", route: "/production", icon: Factory, permission: PERMISSIONS.PRODUCTION_READ, group: "operations" },
   { key: "quality", label: "Quality Control", route: "/quality", icon: FlaskConical, permission: PERMISSIONS.QUALITY_READ, group: "operations" },
+  { key: "shipping", label: "Shipping", route: "/shipping", icon: Boxes, permission: PERMISSIONS.SHIPPING_READ, group: "operations" },
   { key: "reports", label: "Reports", route: "/reports", icon: BarChart3, permission: PERMISSIONS.REPORTS_READ, group: "insights" },
   { key: "users", label: "User Management", route: "/users", icon: UserCog, permission: PERMISSIONS.USERS_MANAGE, group: "admin" },
   { key: "storefront", label: "Storefront", route: "/storefront", icon: Store, permission: PERMISSIONS.STOREFRONT_MANAGE, group: "admin" },

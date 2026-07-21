@@ -34,6 +34,8 @@ export const PERMISSIONS = {
   // super-admin-only rule anywhere else. Deleting a Product itself still
   // requires SYSTEM_DELETE, since that's shared with the rest of the app.
   STOREFRONT_DELETE: "storefront:delete",
+  SHIPPING_READ: "shipping:read",
+  SHIPPING_WRITE: "shipping:write",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -52,6 +54,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, PermissionKey[]> = {
     PERMISSIONS.QUALITY_READ,
     PERMISSIONS.QUALITY_WRITE,
     PERMISSIONS.INVENTORY_READ,
+    PERMISSIONS.SHIPPING_READ,
   ],
   warehouse: [
     PERMISSIONS.DASHBOARD_VIEW,
@@ -60,6 +63,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, PermissionKey[]> = {
     PERMISSIONS.INVENTORY_READ,
     PERMISSIONS.INVENTORY_WRITE,
     PERMISSIONS.PURCHASE_ORDERS_READ,
+    PERMISSIONS.SHIPPING_READ,
+    PERMISSIONS.SHIPPING_WRITE,
   ],
   sales: [
     PERMISSIONS.DASHBOARD_VIEW,
@@ -68,12 +73,14 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, PermissionKey[]> = {
     PERMISSIONS.SALES_ORDERS_READ,
     PERMISSIONS.SALES_ORDERS_WRITE,
     PERMISSIONS.PRODUCTS_READ,
+    PERMISSIONS.SHIPPING_READ,
   ],
   finance: [
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.SALES_ORDERS_READ,
     PERMISSIONS.PURCHASE_ORDERS_READ,
     PERMISSIONS.REPORTS_READ,
+    PERMISSIONS.SHIPPING_READ,
   ],
   management: [
     PERMISSIONS.DASHBOARD_VIEW,
@@ -85,6 +92,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, PermissionKey[]> = {
     PERMISSIONS.INVENTORY_READ,
     PERMISSIONS.PRODUCTION_READ,
     PERMISSIONS.QUALITY_READ,
+    PERMISSIONS.SHIPPING_READ,
   ],
 };
 

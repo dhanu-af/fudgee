@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { createShipment } from "@/modules/shipping/actions";
+import { deleteSalesOrder } from "@/modules/sales-orders/actions";
+import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 
 export type ReadyToShipRow = {
   id: string;
@@ -26,27 +28,47 @@ function CreateShipmentButton({ salesOrderId }: { salesOrderId: string }) {
   );
 }
 
-export const readyToShipColumns: ColumnDef<ReadyToShipRow>[] = [
-  {
-    accessorKey: "seq",
-    header: "SO #",
-    cell: ({ row }) => `SO-${String(row.original.seq).padStart(4, "0")}`,
-  },
-  { accessorKey: "customer", header: "Customer", cell: ({ row }) => row.original.customer.name },
-  {
-    accessorKey: "orderDate",
-    header: "Order Date",
-    cell: ({ row }) => new Date(row.original.orderDate).toLocaleDateString(),
-  },
-  {
-    accessorKey: "requestedDate",
-    header: "Required Ship Date",
-    cell: ({ row }) =>
-      row.original.requestedDate ? new Date(row.original.requestedDate).toLocaleDateString() : "—",
-  },
-  {
-    id: "actions",
-    header: "",
-    cell: ({ row }) => <CreateShipmentButton salesOrderId={row.original.id} />,
-  },
-];
+export function getReadyToShipColumns(canDelete: boolean): ColumnDef<ReadyToShipRow>[] {
+  const columns: ColumnDef<ReadyToShipRow>[] = [
+    {
+      accessorKey: "seq",
+      header: "SO #",
+      cell: ({ row }) => `SO-${String(row.original.seq).padStart(4, "0")}`,
+    },
+    { accessorKey: "customer", header: "Customer", cell: ({ row }) => row.original.customer.name },
+    {
+      accessorKey: "orderDate",
+      header: "Order Date",
+      cell: ({ row }) => new Date(row.original.orderDate).toLocaleDateString(),
+    },
+    {
+      accessorKey: "requestedDate",
+      header: "Required Ship Date",
+      cell: ({ row }) =>
+        row.original.requestedDate ? new Date(row.original.requestedDate).toLocaleDateString() : "—",
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => <CreateShipmentButton salesOrderId={row.original.id} />,
+    },
+  ];
+
+  if (canDelete) {
+    columns.push({
+      id: "delete",
+      header: "",
+      // This deletes the underlying Sales Order (same action/rules as the
+      // Sales Orders page) — blocked if it has a linked shipment or invoice,
+      // same as everywhere else.
+      cell: ({ row }) => (
+        <DeleteRowButton
+          action={deleteSalesOrder.bind(null, row.original.id)}
+          confirmMessage={`Delete SO-${String(row.original.seq).padStart(4, "0")}? This cannot be undone.`}
+        />
+      ),
+    });
+  }
+
+  return columns;
+}

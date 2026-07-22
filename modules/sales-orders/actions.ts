@@ -133,7 +133,7 @@ export async function deleteSalesOrder(
   try {
     await db.salesOrder.delete({ where: { id } });
   } catch {
-    return { error: "Failed to delete sales order." };
+    return { error: "Failed to delete — this order may have a linked shipment or invoice. Delete those first." };
   }
 
   revalidatePath("/sales-orders");

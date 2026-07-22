@@ -30,7 +30,11 @@ export function AssetForm({
   asset?: Asset;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
-  const purchaseDateValue = asset ? new Date(asset.purchaseDate).toISOString().slice(0, 10) : undefined;
+  // Same reasoning as ExpenseForm's date default — a blank required native
+  // date input silently blocks submission client-side with no visible error.
+  const purchaseDateValue = asset
+    ? new Date(asset.purchaseDate).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
   const disposedAtValue = asset?.disposedAt ? new Date(asset.disposedAt).toISOString().slice(0, 10) : undefined;
 
   return (

@@ -32,7 +32,11 @@ export function ExpenseForm({
   expense?: Expense;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
-  const dateValue = expense ? new Date(expense.date).toISOString().slice(0, 10) : undefined;
+  // Defaulting to today (rather than leaving this blank for new expenses)
+  // matters more than it looks: it's a required native date input, so an
+  // empty value silently blocks form submission client-side with no visible
+  // error — the request never even reaches the server.
+  const dateValue = expense ? new Date(expense.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">

@@ -37,6 +37,7 @@ export async function POST(request: Request) {
           data: {
             paymentStatus: "PAID",
             status: "CONFIRMED",
+            paidAt: new Date(),
             stripePaymentIntentId:
               typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
           },

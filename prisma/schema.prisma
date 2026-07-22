@@ -78,6 +78,7 @@ model User {
   dispatchedShipments   Shipment[]
   lockedBatchNutritions BatchNutrition[]
   nutritionAuditLogs    NutritionAuditLog[]
+  expenses              Expense[]
 
   @@index([roleId])
 }
@@ -206,6 +207,7 @@ model Customer {
   updatedAt       DateTime     @updatedAt
   salesOrders     SalesOrder[]
   returns         Return[]
+  invoices        Invoice[]
 }
 
 // Its own table (not a text field) so Phase 2 can promote it to a full
@@ -222,6 +224,7 @@ model Supplier {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   purchaseOrders PurchaseOrder[]
+  expenses       Expense[]
 }
 
 // --- Warehouse & Inventory (M4) ---
@@ -344,23 +347,35 @@ model SalesOrder {
   paymentStatus           SalesOrderPaymentStatus @default(UNPAID)
   stripeCheckoutSessionId String?                 @unique
   stripePaymentIntentId   String?
+  // Set alongside paymentStatus flipping to PAID (Stripe webhook, or Finance's
+  // recordInvoicePayment for wholesale orders) — gives Finance an accurate
+  // "money actually received" date, since updatedAt can be bumped by any
+  // unrelated field edit.
+  paidAt                  DateTime?
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
   customer                Customer                @relation(fields: [customerId], references: [id])
   lines                   SalesOrderLine[]
   shipment                Shipment?
+  invoiceLink             InvoiceSalesOrder?
 }
 
 model SalesOrderLine {
-  id            String         @id @default(cuid())
-  salesOrderId  String
-  productId     String
-  quantity      Decimal        @db.Decimal(14, 4)
-  unitPrice     Decimal        @db.Decimal(14, 4)
-  lineTotal     Decimal        @db.Decimal(14, 4)
-  salesOrder    SalesOrder     @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
-  product       Product        @relation(fields: [productId], references: [id])
-  shipmentItems ShipmentItem[]
+  id             String         @id @default(cuid())
+  salesOrderId   String
+  productId      String
+  quantity       Decimal        @db.Decimal(14, 4)
+  unitPrice      Decimal        @db.Decimal(14, 4)
+  lineTotal      Decimal        @db.Decimal(14, 4)
+  // Snapshot of Product.costPrice at the moment this line was created (stamped
+  // by checkout-actions.ts and sales-orders/actions.ts) — Product.costPrice can
+  // change later, so COGS/margin reporting needs the historical cost, not the
+  // current one. Nullable because it's absent on lines created before this
+  // column existed and where the product had no costPrice set at sale time.
+  unitCostAtSale Decimal?       @db.Decimal(14, 4)
+  salesOrder     SalesOrder     @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  product        Product        @relation(fields: [productId], references: [id])
+  shipmentItems  ShipmentItem[]
 }
 
 // --- Recipes / formulations ---
@@ -789,4 +804,133 @@ model NutritionAuditLog {
   changedAt        DateTime       @default(now())
   batchNutrition   BatchNutrition @relation(fields: [batchNutritionId], references: [id], onDelete: Cascade)
   changedByUser    User?          @relation(fields: [changedByUserId], references: [id])
+}
+
+// --- Finance (M8) ---
+// A pragmatic single-ledger design, not double-entry GL — matches the level
+// of ambition of Dhanu's other finance system. Revenue/COGS/customer
+// profitability are derived from existing SalesOrder/SalesOrderLine data
+// (see modules/finance/lib/pnl.ts); Expense/Asset/Invoice are the only new
+// manually-entered records. Invoice deliberately has no stored status column
+// — Unpaid/Partially Paid/Paid is always derived from SUM(payments) vs
+// totalAmount (modules/finance/lib/invoice-status.ts), so it can never drift
+// from reality. Depreciation is computed on the fly (straight-line) from
+// Asset, never persisted as rows — no cron needed.
+
+enum FinanceExpenseCategory {
+  RENT
+  UTILITIES
+  SALARIES_WAGES
+  MARKETING
+  PACKAGING_SUPPLIES
+  MAINTENANCE
+  INSURANCE
+  OFFICE_SUPPLIES
+  PROFESSIONAL_FEES
+  // Logged here for cash-tracking on the Statement only — excluded from the
+  // P&L's Operating Expenses so it's never double-counted against the
+  // matching Asset's Depreciation.
+  CAPITAL_ASSET_PURCHASE
+  OTHER
+}
+
+enum FinancePaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  STRIPE
+  CHEQUE
+  OTHER
+}
+
+enum AssetCategory {
+  MACHINERY
+  VEHICLE
+  BUILDING
+  FURNITURE_FIXTURES
+  IT_EQUIPMENT
+  OTHER
+}
+
+enum AssetStatus {
+  ACTIVE
+  DISPOSED
+}
+
+model Expense {
+  id              String                 @id @default(cuid())
+  seq             Int                    @default(autoincrement())
+  date            DateTime
+  category        FinanceExpenseCategory
+  amount          Decimal                @db.Decimal(14, 4)
+  // Optional input-tax-credit side, for the GST Summary tab only — left null
+  // if not tracked, never blocks saving an expense.
+  gstAmount       Decimal?               @db.Decimal(14, 4)
+  paymentMethod   FinancePaymentMethod
+  note            String?
+  supplierId      String?
+  createdByUserId String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  supplier        Supplier?              @relation(fields: [supplierId], references: [id])
+  createdByUser   User?                  @relation(fields: [createdByUserId], references: [id])
+
+  @@index([date])
+}
+
+model Asset {
+  id                       String        @id @default(cuid())
+  seq                      Int           @default(autoincrement())
+  name                     String
+  category                 AssetCategory
+  purchaseDate             DateTime
+  purchaseCost             Decimal       @db.Decimal(14, 4)
+  salvageValue             Decimal       @default(0) @db.Decimal(14, 4)
+  depreciationPeriodMonths Int
+  status                   AssetStatus   @default(ACTIVE)
+  disposedAt               DateTime?
+  notes                    String?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+}
+
+model Invoice {
+  id          String              @id @default(cuid())
+  seq         Int                 @default(autoincrement())
+  customerId  String
+  issueDate   DateTime            @default(now())
+  dueDate     DateTime?
+  // Snapshot sum at generation time — SalesOrder lines/totals are never
+  // edited after creation in this app, so this can't drift.
+  totalAmount Decimal             @db.Decimal(14, 4)
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  customer    Customer            @relation(fields: [customerId], references: [id])
+  salesOrders InvoiceSalesOrder[]
+  payments    InvoicePayment[]
+}
+
+// Join table, not 1:1 — a wholesale customer's invoice may bundle several
+// Sales Orders into one bill. @@unique(salesOrderId) prevents the same order
+// being billed on two invoices.
+model InvoiceSalesOrder {
+  id           String     @id @default(cuid())
+  invoiceId    String
+  salesOrderId String     @unique
+  amount       Decimal    @db.Decimal(14, 4)
+  invoice      Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id])
+}
+
+model InvoicePayment {
+  id        String               @id @default(cuid())
+  invoiceId String
+  date      DateTime             @default(now())
+  amount    Decimal              @db.Decimal(14, 4)
+  method    FinancePaymentMethod
+  reference String?
+  note      String?
+  createdAt DateTime             @default(now())
+  invoice   Invoice              @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 }

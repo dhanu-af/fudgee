@@ -32,7 +32,17 @@ export async function createSalesOrder(
     return { error: linesParsed.error.issues[0]?.message ?? "Invalid line items." };
   }
 
-  const lines = linesParsed.data.map((l) => ({ ...l, lineTotal: l.quantity * l.unitPrice }));
+  const productIds = [...new Set(linesParsed.data.map((l) => l.productId))];
+  const products = await db.product.findMany({ where: { id: { in: productIds } } });
+  const costByProductId = new Map(products.map((p) => [p.id, p.costPrice !== null ? Number(p.costPrice) : null]));
+
+  const lines = linesParsed.data.map((l) => ({
+    ...l,
+    lineTotal: l.quantity * l.unitPrice,
+    // Snapshot for Finance's COGS/margin reporting — see the matching comment
+    // in modules/storefront/checkout-actions.ts.
+    unitCostAtSale: costByProductId.get(l.productId) ?? null,
+  }));
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
 
   await db.salesOrder.create({

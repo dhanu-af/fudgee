@@ -42,7 +42,14 @@ export async function createStripeCheckout(
   });
   const productMap = new Map(products.map((p) => [p.id, p]));
 
-  const lines: { productId: string; name: string; quantity: number; unitPrice: number; lineTotal: number }[] = [];
+  const lines: {
+    productId: string;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+    unitCostAtSale: number | null;
+  }[] = [];
   for (const line of linesParsed.data) {
     const product = productMap.get(line.productId);
     if (!product || product.sellPrice === null) {
@@ -55,6 +62,9 @@ export async function createStripeCheckout(
       quantity: line.quantity,
       unitPrice,
       lineTotal: unitPrice * line.quantity,
+      // Snapshot for Finance's COGS/margin reporting — Product.costPrice can
+      // change later, so this must be captured at sale time, not derived later.
+      unitCostAtSale: product.costPrice !== null ? Number(product.costPrice) : null,
     });
   }
 
@@ -91,7 +101,15 @@ export async function createStripeCheckout(
       subtotal,
       total: subtotal,
       gstAmount,
-      lines: { create: lines.map(({ productId, quantity, unitPrice, lineTotal }) => ({ productId, quantity, unitPrice, lineTotal })) },
+      lines: {
+        create: lines.map(({ productId, quantity, unitPrice, lineTotal, unitCostAtSale }) => ({
+          productId,
+          quantity,
+          unitPrice,
+          lineTotal,
+          unitCostAtSale,
+        })),
+      },
     },
   });
 

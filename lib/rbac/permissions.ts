@@ -36,6 +36,8 @@ export const PERMISSIONS = {
   STOREFRONT_DELETE: "storefront:delete",
   SHIPPING_READ: "shipping:read",
   SHIPPING_WRITE: "shipping:write",
+  FINANCE_READ: "finance:read",
+  FINANCE_WRITE: "finance:write",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -81,6 +83,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, PermissionKey[]> = {
     PERMISSIONS.PURCHASE_ORDERS_READ,
     PERMISSIONS.REPORTS_READ,
     PERMISSIONS.SHIPPING_READ,
+    PERMISSIONS.FINANCE_READ,
+    PERMISSIONS.FINANCE_WRITE,
   ],
   management: [
     PERMISSIONS.DASHBOARD_VIEW,
@@ -93,6 +97,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, PermissionKey[]> = {
     PERMISSIONS.PRODUCTION_READ,
     PERMISSIONS.QUALITY_READ,
     PERMISSIONS.SHIPPING_READ,
+    PERMISSIONS.FINANCE_READ,
   ],
 };
 

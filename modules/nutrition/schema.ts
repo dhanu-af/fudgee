@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { NUTRIENT_FIELDS } from "@/modules/nutrition/lib/nutrients";
 
-const optionalNumber = () => z.coerce.number().nonnegative().optional().or(z.nan().transform(() => undefined));
+// z.coerce.number() turns "" into 0 (Number("") === 0), not NaN, so a plain
+// .optional().or(z.nan()...) fallback never fires for a blank input — same
+// gotcha already hit and fixed for tolerancePercent in
+// modules/batch-calculations/schema.ts. Preprocessing blank/missing to
+// undefined first is the fix.
+const optionalNumber = () =>
+  z.preprocess((val) => (val === "" || val == null ? undefined : val), z.coerce.number().nonnegative().optional());
 
 const nutrientNumberFields = Object.fromEntries(NUTRIENT_FIELDS.map((f) => [f.key, optionalNumber()])) as Record<
   (typeof NUTRIENT_FIELDS)[number]["key"],

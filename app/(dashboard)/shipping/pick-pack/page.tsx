@@ -1,12 +1,13 @@
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
+import { can } from "@/lib/rbac/can";
 import { getPickPackQueue } from "@/modules/shipping/queries";
 import { ShipmentsTable } from "@/modules/shipping/components/shipments-table";
 import { TabNav } from "@/components/layout/tab-nav";
 import { SHIPPING_TABS } from "@/modules/shipping/nav";
 
 export default async function PickPackPage() {
-  await requirePermission(PERMISSIONS.SHIPPING_READ);
+  const session = await requirePermission(PERMISSIONS.SHIPPING_READ);
   const shipments = await getPickPackQueue();
 
   return (
@@ -16,7 +17,11 @@ export default async function PickPackPage() {
       <p className="text-sm text-muted-foreground">
         Open a shipment to work through picking, packing, and boxing — status updates happen on its detail page.
       </p>
-      <ShipmentsTable data={shipments} emptyMessage="Nothing waiting to be picked or packed." />
+      <ShipmentsTable
+        data={shipments}
+        canDelete={can(session, PERMISSIONS.SYSTEM_DELETE)}
+        emptyMessage="Nothing waiting to be picked or packed."
+      />
     </div>
   );
 }

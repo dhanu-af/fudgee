@@ -196,7 +196,7 @@ export async function deletePackage(
   _prev: ShippingFormState,
   _formData: FormData
 ): Promise<ShippingFormState> {
-  await requirePermission(PERMISSIONS.SHIPPING_WRITE);
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
 
   const pkg = await db.package.findUnique({ where: { id }, select: { shipmentId: true } });
   try {
@@ -206,6 +206,30 @@ export async function deletePackage(
   }
 
   if (pkg) revalidatePath(`/shipping/shipments/${pkg.shipmentId}`);
+  return {};
+}
+
+// Deleting a shipment does not reverse any inventory already deducted at
+// dispatch, or touch the sales order's status — same simplification as
+// deleteSalesOrder not reversing its own fulfillment side effects.
+export async function deleteShipment(
+  id: string,
+  _prev: ShippingFormState,
+  _formData: FormData
+): Promise<ShippingFormState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  try {
+    await db.shipment.delete({ where: { id } });
+  } catch {
+    return { error: "Failed to delete shipment." };
+  }
+
+  revalidatePath("/shipping/shipments");
+  revalidatePath("/shipping/pick-pack");
+  revalidatePath("/shipping/dispatch");
+  revalidatePath("/shipping/tracking");
+  revalidatePath("/shipping/ready-to-ship");
   return {};
 }
 
@@ -251,6 +275,25 @@ export async function addTrackingEvent(
   revalidatePath(`/shipping/shipments/${shipmentId}`);
   revalidatePath("/shipping/tracking");
   revalidatePath("/shipping/shipments");
+  return {};
+}
+
+export async function deleteTrackingEvent(
+  id: string,
+  _prev: ShippingFormState,
+  _formData: FormData
+): Promise<ShippingFormState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  const event = await db.trackingEvent.findUnique({ where: { id }, select: { shipmentId: true } });
+  try {
+    await db.trackingEvent.delete({ where: { id } });
+  } catch {
+    return { error: "Failed to delete tracking update." };
+  }
+
+  if (event) revalidatePath(`/shipping/shipments/${event.shipmentId}`);
+  revalidatePath("/shipping/tracking");
   return {};
 }
 

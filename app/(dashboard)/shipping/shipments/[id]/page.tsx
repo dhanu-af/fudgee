@@ -20,6 +20,7 @@ export default async function ShipmentDetailPage({ params }: { params: Promise<{
   if (!shipment) notFound();
 
   const canWrite = can(session, PERMISSIONS.SHIPPING_WRITE);
+  const canDelete = can(session, PERMISSIONS.SYSTEM_DELETE);
   const carriers = canWrite ? await getActiveCarrierOptions() : [];
 
   const packedQuantityByProduct = new Map<string, number>();
@@ -85,7 +86,7 @@ export default async function ShipmentDetailPage({ params }: { params: Promise<{
 
       <div>
         <h2 className="mb-2 font-medium">Packages</h2>
-        <PackageList packages={shipment.packages} canDelete={canWrite} />
+        <PackageList packages={shipment.packages} canDelete={canDelete} />
         {canWrite && shipment.status !== "DISPATCHED" && (
           <div className="mt-3">
             <PackageForm
@@ -124,7 +125,7 @@ export default async function ShipmentDetailPage({ params }: { params: Promise<{
 
       <div>
         <h2 className="mb-2 font-medium">Tracking</h2>
-        <TrackingTimeline events={shipment.trackingEvents} />
+        <TrackingTimeline events={shipment.trackingEvents} canDelete={canDelete} />
         {canWrite && shipment.status !== "WAITING" && shipment.status !== "PICKING" && shipment.status !== "PACKING" && (
           <div className="mt-3">
             <TrackingEventForm shipmentId={shipment.id} />

@@ -4,7 +4,7 @@ import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { can } from "@/lib/rbac/can";
 import { getInvoiceById } from "@/modules/finance/queries";
-import { deleteInvoice } from "@/modules/finance/actions";
+import { deleteInvoice, deletePayment } from "@/modules/finance/actions";
 import { InvoicePaymentForm } from "@/modules/finance/components/invoice-payment-form";
 import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 import { Badge } from "@/components/ui/badge";
@@ -85,12 +85,13 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               <TableHead>Amount</TableHead>
               <TableHead>Method</TableHead>
               <TableHead>Reference</TableHead>
+              {canDelete && <TableHead />}
             </TableRow>
           </TableHeader>
           <TableBody>
             {invoice.payments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-16 text-center text-muted-foreground">
+                <TableCell colSpan={canDelete ? 5 : 4} className="h-16 text-center text-muted-foreground">
                   No payments recorded yet.
                 </TableCell>
               </TableRow>
@@ -101,6 +102,14 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                   <TableCell>{Number(p.amount).toFixed(2)}</TableCell>
                   <TableCell>{p.method.replace(/_/g, " ")}</TableCell>
                   <TableCell>{p.reference ?? "—"}</TableCell>
+                  {canDelete && (
+                    <TableCell>
+                      <DeleteRowButton
+                        action={deletePayment.bind(null, p.id)}
+                        confirmMessage="Delete this payment? If it was the payment that made this invoice/order Paid, that status will revert too."
+                      />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

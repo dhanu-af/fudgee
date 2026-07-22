@@ -252,6 +252,46 @@ export async function recordInvoicePayment(
   return {};
 }
 
+// Deleting a payment (e.g. one entered by mistake) can drop an invoice back
+// below fully paid — when that happens, any Sales Order this invoice flipped
+// to PAID must revert to UNPAID too, since payment status always has to stay
+// derived from actual payments, never a stale flag left over from a deleted
+// one. Never touches a Stripe-verified order (that PAID status comes from a
+// different source of truth entirely).
+export async function deletePayment(
+  paymentId: string,
+  _prev: FinanceFormState,
+  _formData: FormData
+): Promise<FinanceFormState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  const payment = await db.invoicePayment.findUnique({
+    where: { id: paymentId },
+    include: { invoice: { include: { payments: true, salesOrders: true } } },
+  });
+  if (!payment) return { error: "Payment not found." };
+
+  await db.invoicePayment.delete({ where: { id: paymentId } });
+
+  const remainingPaidTotal = sumPayments(payment.invoice.payments.filter((p) => p.id !== paymentId));
+  if (remainingPaidTotal < Number(payment.invoice.totalAmount) && payment.invoice.salesOrders.length > 0) {
+    await db.salesOrder.updateMany({
+      where: {
+        id: { in: payment.invoice.salesOrders.map((link) => link.salesOrderId) },
+        paymentStatus: "PAID",
+        stripePaymentIntentId: null,
+      },
+      data: { paymentStatus: "UNPAID", paidAt: null },
+    });
+  }
+
+  revalidatePath(`/finance/invoices/${payment.invoiceId}`);
+  revalidatePath("/finance/invoices");
+  revalidatePath("/sales-orders");
+  revalidatePath("/finance");
+  return {};
+}
+
 // Blocked at the action level (not just relying on the FK) — silently
 // cascade-deleting a payment history would be worse than a typical
 // shipment/package delete.

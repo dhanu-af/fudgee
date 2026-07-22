@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { can } from "@/lib/rbac/can";
@@ -7,6 +8,7 @@ import { deleteSalesOrder } from "@/modules/sales-orders/actions";
 import { SalesOrderStatusActions } from "@/modules/sales-orders/components/sales-order-status-actions";
 import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -36,9 +38,14 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
       </div>
 
       <div className="flex items-center justify-between">
-        {can(session, PERMISSIONS.SALES_ORDERS_WRITE) && (
-          <SalesOrderStatusActions id={so.id} status={so.status} />
-        )}
+        <div className="flex items-center gap-2">
+          {can(session, PERMISSIONS.SALES_ORDERS_WRITE) && (
+            <SalesOrderStatusActions id={so.id} status={so.status} />
+          )}
+          <Button variant="outline" render={<Link href={`/sales-orders/${so.id}/invoice`} />}>
+            View / Print Invoice
+          </Button>
+        </div>
         {can(session, PERMISSIONS.SYSTEM_DELETE) && (
           <DeleteRowButton
             action={deleteSalesOrder.bind(null, so.id)}

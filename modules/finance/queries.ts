@@ -210,8 +210,18 @@ export async function getCustomerProfitability(from: Date, to: Date) {
 // --- Statement (unified ledger) ---
 
 export async function getStatement(from: Date, to: Date): Promise<StatementEntry[]> {
-  const [expenses, shipments, payments, stripeOrders, assets] = await Promise.all([
+  const [expenses, purchaseOrders, shipments, payments, stripeOrders, assets] = await Promise.all([
     db.expense.findMany({ where: { date: { gte: from, lte: to } }, include: { supplier: true } }),
+    // Recognized on RECEIVED (goods actually arrived, real spend), dated by
+    // orderDate since Purchase Orders don't track a separate received/paid
+    // date. This is real cash out for raw materials — distinct from, and not
+    // double-counted against, the P&L's COGS (which is driven by
+    // SalesOrderLine.unitCostAtSale, a standard per-unit cost independent of
+    // what any specific purchase order actually paid).
+    db.purchaseOrder.findMany({
+      where: { status: "RECEIVED", orderDate: { gte: from, lte: to } },
+      include: { supplier: true },
+    }),
     db.shipment.findMany({
       where: { dispatchedAt: { gte: from, lte: to }, freightCost: { not: null } },
       include: { salesOrder: { select: { seq: true } } },
@@ -236,6 +246,18 @@ export async function getStatement(from: Date, to: Date): Promise<StatementEntry
       reference: `EXP-${String(e.seq).padStart(4, "0")}`,
       description: `${e.category.replace(/_/g, " ")}${e.supplier ? ` — ${e.supplier.name}` : ""}${e.note ? ` (${e.note})` : ""}`,
       debit: Number(e.amount),
+      credit: 0,
+      isCash: true,
+    });
+  }
+
+  for (const po of purchaseOrders) {
+    entries.push({
+      date: po.orderDate,
+      type: "PURCHASE",
+      reference: `PO-${String(po.seq).padStart(4, "0")}`,
+      description: `Raw material purchase — ${po.supplier.name}`,
+      debit: Number(po.total),
       credit: 0,
       isCash: true,
     });

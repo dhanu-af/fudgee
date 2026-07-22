@@ -4,7 +4,7 @@
 // `isCash: false` so a running *cash* balance can exclude them if needed,
 // while still showing up in the accrual view.
 
-export type StatementEntryType = "EXPENSE" | "FREIGHT" | "DEPRECIATION" | "PAYMENT_RECEIVED" | "STRIPE_SALE";
+export type StatementEntryType = "EXPENSE" | "PURCHASE" | "FREIGHT" | "DEPRECIATION" | "PAYMENT_RECEIVED" | "STRIPE_SALE";
 
 export type StatementEntry = {
   date: Date;

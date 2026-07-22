@@ -76,6 +76,8 @@ model User {
   inventoryTransactions InventoryTransaction[]
   qualityChecks         QualityCheck[]
   dispatchedShipments   Shipment[]
+  lockedBatchNutritions BatchNutrition[]
+  nutritionAuditLogs    NutritionAuditLog[]
 
   @@index([roleId])
 }
@@ -151,6 +153,12 @@ model Product {
   recipeLineUsages      RecipeLine[]
   batchCalcLineUsages   BatchCalculationLine[]
   packageItemUsages     PackageItem[]
+  nutritionProfile      NutritionProfile?
+
+  // Used as the "per serving" basis for the Nutrition Information Panel —
+  // meaningful on finished goods, but not restricted to them (a raw
+  // material could reasonably have one too).
+  servingSizeGrams Decimal? @db.Decimal(10, 2)
 
   // --- Storefront marketing fields (all optional — purely additive, no
   // effect on the internal Products/Production/Inventory workflows) ---
@@ -334,7 +342,7 @@ model SalesOrder {
   // GST-inclusive price as total/11) — stored for BAS/tax reporting.
   gstAmount               Decimal?                @db.Decimal(14, 4)
   paymentStatus           SalesOrderPaymentStatus @default(UNPAID)
-  stripeCheckoutSessionId String?                  @unique
+  stripeCheckoutSessionId String?                 @unique
   stripePaymentIntentId   String?
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
@@ -344,14 +352,14 @@ model SalesOrder {
 }
 
 model SalesOrderLine {
-  id           String         @id @default(cuid())
-  salesOrderId String
-  productId    String
-  quantity     Decimal        @db.Decimal(14, 4)
-  unitPrice    Decimal        @db.Decimal(14, 4)
-  lineTotal    Decimal        @db.Decimal(14, 4)
-  salesOrder   SalesOrder     @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
-  product      Product        @relation(fields: [productId], references: [id])
+  id            String         @id @default(cuid())
+  salesOrderId  String
+  productId     String
+  quantity      Decimal        @db.Decimal(14, 4)
+  unitPrice     Decimal        @db.Decimal(14, 4)
+  lineTotal     Decimal        @db.Decimal(14, 4)
+  salesOrder    SalesOrder     @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  product       Product        @relation(fields: [productId], references: [id])
   shipmentItems ShipmentItem[]
 }
 
@@ -444,6 +452,7 @@ model ProductionBatch {
   product         Product                @relation(fields: [productId], references: [id])
   inputs          ProductionBatchInput[]
   qualityChecks   QualityCheck[]
+  nutrition       BatchNutrition?
 }
 
 model ProductionBatchInput {
@@ -603,35 +612,35 @@ model Carrier {
 }
 
 model Shipment {
-  id               String          @id @default(cuid())
-  seq              Int             @default(autoincrement())
-  salesOrderId     String          @unique
-  carrierId        String?
-  trackingNumber   String?
-  status           ShipmentStatus  @default(WAITING)
-  stockReserved    Boolean         @default(false)
-  shipDate         DateTime?
-  freightCost      Decimal?        @db.Decimal(14, 4)
+  id                 String          @id @default(cuid())
+  seq                Int             @default(autoincrement())
+  salesOrderId       String          @unique
+  carrierId          String?
+  trackingNumber     String?
+  status             ShipmentStatus  @default(WAITING)
+  stockReserved      Boolean         @default(false)
+  shipDate           DateTime?
+  freightCost        Decimal?        @db.Decimal(14, 4)
   // Snapshot at creation time — SalesOrder/Customer don't store one, and an
   // address shouldn't silently change on an in-flight shipment if the
   // customer record is edited later.
-  deliveryAddress  String?
-  dispatchedAt     DateTime?
+  deliveryAddress    String?
+  dispatchedAt       DateTime?
   dispatchedByUserId String?
-  driverName       String?
-  vehicleInfo      String?
-  numberOfCartons  Int?
-  signedBy         String?
-  dispatchNotes    String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  salesOrder       SalesOrder      @relation(fields: [salesOrderId], references: [id])
-  carrier          Carrier?        @relation(fields: [carrierId], references: [id])
-  dispatchedByUser User?           @relation(fields: [dispatchedByUserId], references: [id])
-  items            ShipmentItem[]
-  packages         Package[]
-  trackingEvents   TrackingEvent[]
-  returns          Return[]
+  driverName         String?
+  vehicleInfo        String?
+  numberOfCartons    Int?
+  signedBy           String?
+  dispatchNotes      String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  salesOrder         SalesOrder      @relation(fields: [salesOrderId], references: [id])
+  carrier            Carrier?        @relation(fields: [carrierId], references: [id])
+  dispatchedByUser   User?           @relation(fields: [dispatchedByUserId], references: [id])
+  items              ShipmentItem[]
+  packages           Package[]
+  trackingEvents     TrackingEvent[]
+  returns            Return[]
 }
 
 model ShipmentItem {
@@ -700,4 +709,84 @@ model Return {
   updatedAt       DateTime     @updatedAt
   customer        Customer     @relation(fields: [customerId], references: [id])
   shipment        Shipment?    @relation(fields: [shipmentId], references: [id])
+}
+
+// --- Nutrition (M7) ---
+// NutritionProfile is the "ingredient nutrition database" — per-100g values
+// entered once per Product. BatchNutrition is calculated by weighting each
+// Recipe line's percentage against its ingredient's NutritionProfile; it
+// starts as a live working record (editable, every change logged to
+// NutritionAuditLog) and becomes a permanent locked snapshot the moment a
+// PASS QualityCheck is recorded for that batch — see
+// modules/nutrition/actions.ts's lockBatchNutritionOnPass, called from
+// modules/quality/actions.ts's createQualityCheck.
+
+model NutritionProfile {
+  id             String   @id @default(cuid())
+  productId      String   @unique
+  energyKj       Decimal? @db.Decimal(10, 2)
+  energyKcal     Decimal? @db.Decimal(10, 2)
+  protein        Decimal? @db.Decimal(10, 3)
+  totalFat       Decimal? @db.Decimal(10, 3)
+  saturatedFat   Decimal? @db.Decimal(10, 3)
+  transFat       Decimal? @db.Decimal(10, 3)
+  carbohydrates  Decimal? @db.Decimal(10, 3)
+  sugars         Decimal? @db.Decimal(10, 3)
+  addedSugars    Decimal? @db.Decimal(10, 3)
+  dietaryFibre   Decimal? @db.Decimal(10, 3)
+  sodium         Decimal? @db.Decimal(10, 3)
+  cholesterol    Decimal? @db.Decimal(10, 3)
+  potassium      Decimal? @db.Decimal(10, 3)
+  calcium        Decimal? @db.Decimal(10, 3)
+  iron           Decimal? @db.Decimal(10, 3)
+  // Anything not in the fixed list above — [{ name, value, unit }, ...].
+  otherNutrients Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  product        Product  @relation(fields: [productId], references: [id])
+}
+
+model BatchNutrition {
+  id                String              @id @default(cuid())
+  productionBatchId String              @unique
+  // Defaults from the finished good's Product.servingSizeGrams at creation,
+  // but editable per batch (e.g. a batch packaged into a different size).
+  servingSizeGrams  Decimal?            @db.Decimal(10, 2)
+  energyKj          Decimal?            @db.Decimal(10, 2)
+  energyKcal        Decimal?            @db.Decimal(10, 2)
+  protein           Decimal?            @db.Decimal(10, 3)
+  totalFat          Decimal?            @db.Decimal(10, 3)
+  saturatedFat      Decimal?            @db.Decimal(10, 3)
+  transFat          Decimal?            @db.Decimal(10, 3)
+  carbohydrates     Decimal?            @db.Decimal(10, 3)
+  sugars            Decimal?            @db.Decimal(10, 3)
+  addedSugars       Decimal?            @db.Decimal(10, 3)
+  dietaryFibre      Decimal?            @db.Decimal(10, 3)
+  sodium            Decimal?            @db.Decimal(10, 3)
+  cholesterol       Decimal?            @db.Decimal(10, 3)
+  potassium         Decimal?            @db.Decimal(10, 3)
+  calcium           Decimal?            @db.Decimal(10, 3)
+  iron              Decimal?            @db.Decimal(10, 3)
+  otherNutrients    Json?
+  isLocked          Boolean             @default(false)
+  lockedAt          DateTime?
+  lockedByUserId    String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  productionBatch   ProductionBatch     @relation(fields: [productionBatchId], references: [id], onDelete: Cascade)
+  lockedByUser      User?               @relation(fields: [lockedByUserId], references: [id])
+  auditLogs         NutritionAuditLog[]
+}
+
+model NutritionAuditLog {
+  id               String         @id @default(cuid())
+  batchNutritionId String
+  field            String
+  oldValue         String?
+  newValue         String?
+  reason           String?
+  changedByUserId  String?
+  changedAt        DateTime       @default(now())
+  batchNutrition   BatchNutrition @relation(fields: [batchNutritionId], references: [id], onDelete: Cascade)
+  changedByUser    User?          @relation(fields: [changedByUserId], references: [id])
 }

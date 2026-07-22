@@ -8,11 +8,17 @@ import { ProductForm } from "@/modules/products/components/product-form";
 import { ProductGalleryManager } from "@/modules/products/components/product-gallery-manager";
 import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 import { getCategories } from "@/modules/storefront/queries";
+import { getNutritionProfileByProductId } from "@/modules/nutrition/queries";
+import { NutritionProfileForm } from "@/modules/nutrition/components/nutrition-profile-form";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requirePermission(PERMISSIONS.PRODUCTS_WRITE);
   const { id } = await params;
-  const [product, categories] = await Promise.all([getProductById(id), getCategories()]);
+  const [product, categories, nutritionProfile] = await Promise.all([
+    getProductById(id),
+    getCategories(),
+    getNutritionProfileByProductId(id),
+  ]);
   if (!product) notFound();
 
   return (
@@ -34,6 +40,22 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           Additional photos shown in the gallery on the product&apos;s public page, alongside the main photo above.
         </p>
         <ProductGalleryManager productId={id} images={product.images} />
+      </div>
+
+      <div className="flex max-w-3xl flex-col gap-2 rounded-lg border border-border/60 p-4">
+        <h2 className="text-sm font-semibold tracking-tight">Nutrition profile</h2>
+        <p className="text-xs text-muted-foreground">
+          Per-100g nutrition values for this product — used as ingredient data when calculating a finished
+          good&apos;s Nutrition Information Panel from its Recipe.
+        </p>
+        <NutritionProfileForm
+          productId={id}
+          profile={
+            product.servingSizeGrams != null || nutritionProfile
+              ? { servingSizeGrams: product.servingSizeGrams, ...nutritionProfile, otherNutrients: nutritionProfile?.otherNutrients ?? [] }
+              : null
+          }
+        />
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { qualityCheckSchema } from "@/modules/quality/schema";
+import { lockBatchNutritionOnPass } from "@/modules/nutrition/actions";
 
 export type QualityCheckFormState = { error?: string };
 
@@ -30,8 +31,13 @@ export async function createQualityCheck(
     },
   });
 
+  if (parsed.data.result === "PASS") {
+    await lockBatchNutritionOnPass(parsed.data.productionBatchId, session.user.id);
+  }
+
   revalidatePath("/quality");
   revalidatePath(`/production/${parsed.data.productionBatchId}`);
+  revalidatePath(`/production/${parsed.data.productionBatchId}/nutrition`);
   redirect("/quality");
 }
 

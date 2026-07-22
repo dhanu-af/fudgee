@@ -11,10 +11,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar permissions={session.user.permissions as PermissionKey[]} />
+      <div className="print:hidden">
+        <Sidebar permissions={session.user.permissions as PermissionKey[]} />
+      </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar name={session.user.name ?? session.user.email ?? "User"} roleKey={session.user.roleKey} />
-        <main className="flex-1 p-6 md:p-8">{children}</main>
+        <div className="print:hidden">
+          <Topbar name={session.user.name ?? session.user.email ?? "User"} roleKey={session.user.roleKey} />
+        </div>
+        <main className="flex-1 p-6 md:p-8 print:p-0">{children}</main>
       </div>
     </div>
   );

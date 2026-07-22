@@ -8,6 +8,7 @@ import { ProductionBatchStatusActions } from "@/modules/production/components/pr
 import { BatchCostingCard } from "@/modules/production/components/batch-costing-card";
 import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 import { Badge } from "@/components/ui/badge";
+import { TabNav } from "@/components/layout/tab-nav";
 import {
   Table,
   TableBody,
@@ -34,6 +35,14 @@ export default async function ProductionBatchDetailPage({ params }: { params: Pr
         </div>
         <Badge>{batch.status}</Badge>
       </div>
+
+      <TabNav
+        active={`/production/${id}`}
+        tabs={[
+          { label: "Overview", href: `/production/${id}` },
+          { label: "Nutrition", href: `/production/${id}/nutrition` },
+        ]}
+      />
 
       <div className="flex items-center justify-between">
         {can(session, PERMISSIONS.PRODUCTION_WRITE) && (

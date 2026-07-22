@@ -333,7 +333,10 @@ enum SalesOrderPaymentStatus {
 
 model SalesOrder {
   id                      String                  @id @default(cuid())
-  seq                     Int                     @default(autoincrement())
+  // @unique added so a manually-entered order number (see createSalesOrder)
+  // can never collide with another order — enforced at the DB level, not
+  // just in application code.
+  seq                     Int                     @unique @default(autoincrement())
   customerId              String
   status                  SalesOrderStatus        @default(DRAFT)
   orderDate               DateTime                @default(now())

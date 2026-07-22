@@ -87,6 +87,14 @@ export function SalesOrderForm({
       </div>
 
       <div className="flex flex-col gap-2">
+        <Label htmlFor="orderNumber">Order number (optional)</Label>
+        <Input id="orderNumber" name="orderNumber" type="number" step="1" min="1" placeholder="Leave blank to auto-assign the next SO number" />
+        <p className="text-xs text-muted-foreground">
+          Only set this to match an external record — it must not already be used by another order.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
         <Label htmlFor="notes">Notes</Label>
         <Textarea id="notes" name="notes" />
       </div>

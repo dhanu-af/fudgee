@@ -45,8 +45,18 @@ export async function createSalesOrder(
   }));
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
 
+  if (parsed.data.orderNumber != null) {
+    const existing = await db.salesOrder.findUnique({ where: { seq: parsed.data.orderNumber } });
+    if (existing) {
+      return { error: `SO-${String(parsed.data.orderNumber).padStart(4, "0")} is already used by another order.` };
+    }
+  }
+
   await db.salesOrder.create({
     data: {
+      // Explicit only when manually overridden — omitting the field lets
+      // Postgres's normal autoincrement assign the next number, same as ever.
+      ...(parsed.data.orderNumber != null ? { seq: parsed.data.orderNumber } : {}),
       customerId: parsed.data.customerId,
       requestedDate: parsed.data.requestedDate ? new Date(parsed.data.requestedDate) : undefined,
       notes: parsed.data.notes || undefined,
@@ -55,6 +65,13 @@ export async function createSalesOrder(
       lines: { create: lines },
     },
   });
+
+  // A manually-chosen number can be higher than Postgres's autoincrement
+  // counter has ever seen — bump the counter forward so the next
+  // auto-generated order number can never collide with (or fall behind) it.
+  if (parsed.data.orderNumber != null) {
+    await db.$executeRaw`SELECT setval(pg_get_serial_sequence('"SalesOrder"', 'seq'), (SELECT COALESCE(MAX(seq), 0) FROM "SalesOrder"))`;
+  }
 
   revalidatePath("/sales-orders");
   redirect("/sales-orders");

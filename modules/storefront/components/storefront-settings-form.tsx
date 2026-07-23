@@ -135,8 +135,9 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
             defaultValue={settings?.facebookFanPageUrl ?? ""}
           />
           <p className="text-xs text-muted-foreground">
-            Powers the &quot;Follow on Facebook&quot; card on the homepage, footer, and customer Account page —
-            separate from the Facebook URL above (which is just the small footer icon). Leave blank to hide it.
+            Powers the &quot;Follow on Facebook&quot; card on the customer Account page (next to the WhatsApp
+            Community card) — separate from the Facebook URL above (which is just the small footer icon). Leave
+            blank to hide it.
           </p>
         </div>
         <div className="flex flex-col gap-2">

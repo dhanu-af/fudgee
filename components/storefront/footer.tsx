@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { NewsletterForm } from "@/components/storefront/newsletter-form";
-import { FacebookFanPageCard } from "@/components/storefront/facebook-fanpage-card";
 
 function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -33,7 +32,6 @@ type StorefrontSettings = {
   contactAddress: string | null;
   instagramUrl: string | null;
   facebookUrl: string | null;
-  facebookFanPageUrl: string | null;
   tiktokUrl: string | null;
   newsletterHeading: string | null;
   newsletterSubheading: string | null;
@@ -55,12 +53,6 @@ export function StorefrontFooter({ settings }: { settings: StorefrontSettings })
           </div>
           <NewsletterForm variant="dark" />
         </div>
-
-        {settings?.facebookFanPageUrl && (
-          <div className="border-b border-white/15 py-10">
-            <FacebookFanPageCard url={settings.facebookFanPageUrl} />
-          </div>
-        )}
 
         <div className="grid gap-10 sm:grid-cols-2 pt-10 lg:grid-cols-4">
           <div>

@@ -9,7 +9,6 @@ import { ReviewsSection } from "@/components/storefront/reviews-section";
 import { FaqSection } from "@/components/storefront/faq-section";
 import { AboutSection } from "@/components/storefront/about-section";
 import { ContactSection } from "@/components/storefront/contact-section";
-import { FacebookFanPageCard } from "@/components/storefront/facebook-fanpage-card";
 import { SITE_URL } from "@/lib/site-config";
 
 // Content here is admin-editable via the Storefront CMS, and this page's
@@ -81,11 +80,6 @@ export default async function StorefrontHomePage() {
         imageUrl={settings?.aboutImageUrl ?? null}
       />
       <FaqSection items={faqItems} />
-      {settings?.facebookFanPageUrl && (
-        <section className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
-          <FacebookFanPageCard url={settings.facebookFanPageUrl} />
-        </section>
-      )}
       <ContactSection settings={settings} />
     </>
   );

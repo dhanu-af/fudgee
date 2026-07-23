@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import {
   categorySchema,
   galleryItemSchema,
@@ -340,6 +341,31 @@ export async function updateStorefrontSettings(
 
   revalidatePath("/storefront/settings");
   revalidatePath("/");
+  return { success: true };
+}
+
+// --- WhatsApp integration test (one-off connectivity check, not tied to any DB row) ---
+
+export async function sendTestWhatsAppMessage(
+  _prev: StorefrontFormState,
+  _formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const to = process.env.ADMIN_WHATSAPP_NUMBER;
+  if (!to) {
+    return { error: "ADMIN_WHATSAPP_NUMBER is not set in Vercel's Environment Variables yet." };
+  }
+
+  const result = await sendWhatsAppMessage(to, "Fudgee WhatsApp integration is working successfully.");
+  if (!result.sent) {
+    return {
+      error:
+        result.reason === "not_configured"
+          ? "WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID is not set in Vercel's Environment Variables yet."
+          : `Meta rejected the message: ${result.error ?? "unknown error"}`,
+    };
+  }
   return { success: true };
 }
 

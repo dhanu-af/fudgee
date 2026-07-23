@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
 import { gstComponent } from "@/lib/storefront/gst";
+import { getCustomerSession } from "@/lib/customer-auth";
 import { checkoutSchema, checkoutLineSchema } from "@/modules/storefront/schema";
 
 // Mirrors the re-pricing/customer-upsert rules in submitOrder() in
@@ -71,7 +72,16 @@ export async function createStripeCheckout(
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
   const gstAmount = gstComponent(subtotal);
 
-  let customer = await db.customer.findFirst({ where: { email: parsed.data.email } });
+  // A signed-in customer's own account record is authoritative — skip the
+  // email-lookup path entirely so their order always links to the account
+  // they're logged into, not whatever the checkout form's email happens to
+  // match. Guest checkout (no session) keeps the existing email-match
+  // behavior unchanged.
+  const loggedInCustomer = await getCustomerSession();
+  let customer = loggedInCustomer;
+  if (!customer) {
+    customer = await db.customer.findFirst({ where: { email: parsed.data.email } });
+  }
   if (!customer) {
     customer = await db.customer.create({
       data: {

@@ -5,6 +5,7 @@ import { StorefrontHeader } from "@/components/storefront/header";
 import { StorefrontFooter } from "@/components/storefront/footer";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getStorefrontSettings } from "@/modules/storefront/queries";
+import { getCustomerSession } from "@/lib/customer-auth";
 import { SITE_URL, SITE_NAME } from "@/lib/site-config";
 
 const fredoka = Fredoka({ variable: "--font-fredoka", subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -34,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
-  const settings = await getStorefrontSettings();
+  const [settings, customer] = await Promise.all([getStorefrontSettings(), getCustomerSession()]);
 
   // Present on every public page so search engines have a consistent brand
   // identity signal (name, logo, contact info, social profiles) regardless
@@ -57,7 +58,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
     <div className={`storefront ${fredoka.variable} flex min-h-screen flex-col`}>
       <JsonLd data={organizationJsonLd} />
       <CartProvider>
-        <StorefrontHeader />
+        <StorefrontHeader customerName={customer?.name} />
         <main className="flex-1">{children}</main>
         <StorefrontFooter settings={settings} />
       </CartProvider>

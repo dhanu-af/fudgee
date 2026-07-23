@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ShoppingBag, Menu, X } from "lucide-react";
 import { useCart } from "@/lib/storefront/cart-context";
+import { SignOutButton } from "@/modules/customer-account/components/sign-out-button";
 
 const NAV_LINKS = [
   { label: "Shop", href: "/shop" },
@@ -13,7 +14,7 @@ const NAV_LINKS = [
   { label: "Contact", href: "/#contact" },
 ];
 
-export function StorefrontHeader() {
+export function StorefrontHeader({ customerName }: { customerName?: string | null }) {
   const { count } = useCart();
   const [open, setOpen] = useState(false);
 
@@ -49,12 +50,24 @@ export function StorefrontHeader() {
               </span>
             )}
           </Link>
-          <Link
-            href="/login"
-            className="hidden rounded-full bg-[var(--sf-primary)] px-4 py-2 text-sm font-semibold text-[var(--sf-primary-foreground)] shadow-sm transition-transform hover:scale-105 sm:inline-block"
-          >
-            Sign In
-          </Link>
+          {customerName ? (
+            <div className="hidden items-center gap-3 sm:flex">
+              <Link
+                href="/account"
+                className="text-sm font-semibold text-[var(--sf-fg)]/80 transition-colors hover:text-[var(--sf-primary)]"
+              >
+                {customerName.split(" ")[0]}
+              </Link>
+              <SignOutButton />
+            </div>
+          ) : (
+            <Link
+              href="/account/login"
+              className="hidden rounded-full bg-[var(--sf-primary)] px-4 py-2 text-sm font-semibold text-[var(--sf-primary-foreground)] shadow-sm transition-transform hover:scale-105 sm:inline-block"
+            >
+              Sign In
+            </Link>
+          )}
           <button
             type="button"
             aria-label="Toggle menu"
@@ -79,13 +92,28 @@ export function StorefrontHeader() {
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/login"
-            onClick={() => setOpen(false)}
-            className="mt-1 rounded-full bg-[var(--sf-primary)] px-4 py-2 text-center text-sm font-semibold text-[var(--sf-primary-foreground)]"
-          >
-            Sign In
-          </Link>
+          {customerName ? (
+            <>
+              <Link
+                href="/account"
+                onClick={() => setOpen(false)}
+                className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--sf-fg)] hover:bg-[var(--sf-primary-soft)]"
+              >
+                My Account
+              </Link>
+              <div className="px-3 py-2">
+                <SignOutButton />
+              </div>
+            </>
+          ) : (
+            <Link
+              href="/account/login"
+              onClick={() => setOpen(false)}
+              className="mt-1 rounded-full bg-[var(--sf-primary)] px-4 py-2 text-center text-sm font-semibold text-[var(--sf-primary-foreground)]"
+            >
+              Sign In
+            </Link>
+          )}
         </nav>
       )}
     </header>

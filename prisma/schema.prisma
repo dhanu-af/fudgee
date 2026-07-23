@@ -203,11 +203,35 @@ model Customer {
   billingAddress  String?
   shippingAddress String?
   isActive        Boolean      @default(true)
+  // Nullable — most Customer rows are still created by guest checkout with
+  // no account at all. Set the moment this customer signs up for an
+  // account (see modules/customer-account/actions.ts), which "claims" any
+  // existing guest-checkout Customer row sharing that email rather than
+  // creating a duplicate — so past guest orders show up in their history.
+  passwordHash    String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   salesOrders     SalesOrder[]
   returns         Return[]
   invoices        Invoice[]
+  sessions        CustomerSession[]
+}
+
+// A completely separate, DB-backed session mechanism for storefront
+// customer accounts — deliberately not sharing anything with the staff
+// NextAuth/User/Role system (per explicit product requirement: customer
+// accounts must have no connection to the Operations dashboard). DB-backed
+// (not a signed JWT) so logout/revocation is a real row delete, not just a
+// client-side cookie clear.
+model CustomerSession {
+  id         String   @id @default(cuid())
+  customerId String
+  token      String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
 }
 
 // Its own table (not a text field) so Phase 2 can promote it to a full

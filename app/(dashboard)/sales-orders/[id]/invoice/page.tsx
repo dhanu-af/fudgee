@@ -95,6 +95,18 @@ export default async function SalesOrderInvoicePage({ params }: { params: Promis
 
         <div className="flex justify-end">
           <div className="flex w-56 flex-col gap-1">
+            {order.discountAmount != null && Number(order.discountAmount) > 0 && (
+              <>
+                <div className="flex justify-between py-1">
+                  <span className="text-muted-foreground">Items total</span>
+                  <span>{(Number(order.subtotal) + Number(order.discountAmount)).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between py-1 text-primary">
+                  <span>Discount{order.discountPercent ? ` (${order.discountPercent}% off)` : ""}</span>
+                  <span>−{Number(order.discountAmount).toFixed(2)}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between py-1">
               <span className="text-muted-foreground">Subtotal</span>
               <span>{Number(order.subtotal).toFixed(2)}</span>

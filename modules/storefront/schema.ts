@@ -81,12 +81,24 @@ const optionalDate = () =>
     z.coerce.date().optional()
   );
 
+// Blank clears an existing discount (explicit null, same convention as
+// optionalText) — a whole-order percentage auto-applied at checkout while
+// this promotion is active, see getBestActiveDiscount() in queries.ts.
+const optionalPercent = () =>
+  z
+    .preprocess(
+      (val) => (val === "" || val == null ? undefined : val),
+      z.coerce.number().int().min(1, "Discount % must be between 1 and 100").max(100, "Discount % must be between 1 and 100").optional()
+    )
+    .transform((v) => v ?? null);
+
 export const promotionSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   description: optionalText(1000),
   imageUrl: optionalText(2000),
   linkUrl: optionalText(500),
   linkLabel: optionalText(50),
+  discountPercent: optionalPercent(),
   startDate: optionalDate(),
   endDate: optionalDate(),
   sortOrder: z.coerce.number().int().default(0),

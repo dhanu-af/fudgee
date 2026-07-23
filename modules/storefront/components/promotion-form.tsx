@@ -16,6 +16,7 @@ type Promotion = {
   imageUrl: string | null;
   linkUrl: string | null;
   linkLabel: string | null;
+  discountPercent: number | null;
   startDate: Date | null;
   endDate: Date | null;
   sortOrder: number;
@@ -58,6 +59,23 @@ export function PromotionForm({
           <Label htmlFor="linkLabel">Button text (optional)</Label>
           <Input id="linkLabel" name="linkLabel" defaultValue={promotion?.linkLabel ?? ""} placeholder="Shop Now" />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="discountPercent">Discount % (optional)</Label>
+        <Input
+          id="discountPercent"
+          name="discountPercent"
+          type="number"
+          min={1}
+          max={100}
+          defaultValue={promotion?.discountPercent ?? ""}
+          placeholder="e.g. 20"
+        />
+        <p className="text-xs text-muted-foreground">
+          When set, this percentage is automatically deducted from the customer&apos;s total at checkout while this
+          promotion is active — leave blank for a marketing-only banner with no pricing effect.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

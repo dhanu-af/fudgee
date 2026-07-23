@@ -394,6 +394,12 @@ model SalesOrder {
   // GST component of `total` (Australian 10%, backed out of the
   // GST-inclusive price as total/11) — stored for BAS/tax reporting.
   gstAmount               Decimal?                @db.Decimal(14, 4)
+  // Whole-order percentage discount from a Promotion active at checkout
+  // (storefront only — see checkout-actions.ts). `subtotal`/`total` above are
+  // already POST-discount (so every existing Finance report needs no
+  // changes); the pre-discount amount is always `subtotal + discountAmount`.
+  discountPercent         Int?
+  discountAmount          Decimal?                @db.Decimal(14, 4)
   paymentStatus           SalesOrderPaymentStatus @default(UNPAID)
   stripeCheckoutSessionId String?                 @unique
   stripePaymentIntentId   String?
@@ -615,6 +621,10 @@ model Promotion {
   imageUrl    String?
   linkUrl     String?
   linkLabel   String?
+  // Whole-order percentage off, auto-applied at storefront checkout while
+  // this promotion is active (see getBestActiveDiscount() in queries.ts) —
+  // null keeps a promotion a pure marketing banner with no pricing effect.
+  discountPercent Int?
   startDate   DateTime?
   endDate     DateTime?
   sortOrder   Int       @default(0)

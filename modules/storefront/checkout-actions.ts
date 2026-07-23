@@ -8,9 +8,10 @@ import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
 import { notifyAdmins } from "@/lib/whatsapp";
 import { ADMIN_URL } from "@/lib/site-config";
-import { gstComponent } from "@/lib/storefront/gst";
+import { gstComponent, applyDiscount } from "@/lib/storefront/gst";
 import { getCustomerSession } from "@/lib/customer-auth";
 import { checkoutSchema, checkoutLineSchema } from "@/modules/storefront/schema";
+import { getBestActiveDiscount } from "@/modules/storefront/queries";
 
 // Mirrors the re-pricing/customer-upsert rules in submitOrder() in
 // public-actions.ts — this is a second unauthenticated entry point, so it
@@ -71,7 +72,16 @@ export async function createStripeCheckout(
     });
   }
 
-  const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
+  const rawSubtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
+
+  // Auto-applies the single best active promotion discount (no stacking, no
+  // customer-entered code) — see getBestActiveDiscount(). `subtotal`/`total`
+  // below are POST-discount so every existing Finance report keeps working
+  // unchanged; discountAmount/discountPercent record what happened.
+  const activeDiscount = await getBestActiveDiscount();
+  const discountPercent = activeDiscount?.discountPercent ?? null;
+  const discountAmount = discountPercent ? applyDiscount(rawSubtotal, discountPercent) : 0;
+  const subtotal = rawSubtotal - discountAmount;
   const gstAmount = gstComponent(subtotal);
 
   // A signed-in customer's own account record is authoritative — skip the
@@ -113,6 +123,8 @@ export async function createStripeCheckout(
       subtotal,
       total: subtotal,
       gstAmount,
+      discountPercent,
+      discountAmount: discountAmount > 0 ? discountAmount : null,
       lines: {
         create: lines.map(({ productId, quantity, unitPrice, lineTotal, unitCostAtSale }) => ({
           productId,
@@ -153,6 +165,16 @@ export async function createStripeCheckout(
 
   let checkoutUrl: string | null;
   try {
+    // A fresh Stripe Coupon per checkout (rather than scaling down each line
+    // item's unit_amount) — Stripe applies the percentage to the line-item
+    // total itself, so there's no per-line cent-rounding drift to reconcile
+    // against our own discountAmount calculation above.
+    let stripeCouponId: string | undefined;
+    if (discountPercent) {
+      const coupon = await getStripe().coupons.create({ percent_off: discountPercent, duration: "once" });
+      stripeCouponId = coupon.id;
+    }
+
     const session = await getStripe().checkout.sessions.create({
       mode: "payment",
       customer_email: parsed.data.email,
@@ -164,6 +186,7 @@ export async function createStripeCheckout(
           product_data: { name: line.name },
         },
       })),
+      ...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cart`,
       metadata: { salesOrderId: order.id },

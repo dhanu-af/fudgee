@@ -76,6 +76,18 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
       </Table>
 
       <div className="flex flex-col gap-1 text-sm">
+        {so.discountAmount !== null && Number(so.discountAmount) > 0 && (
+          <>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Items total</span>
+              <span>{(Number(so.subtotal) + Number(so.discountAmount)).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-primary">
+              <span>Discount{so.discountPercent ? ` (${so.discountPercent}% off)` : ""}</span>
+              <span>−{Number(so.discountAmount).toFixed(2)}</span>
+            </div>
+          </>
+        )}
         <div className="flex justify-between">
           <span className="text-muted-foreground">Subtotal</span>
           <span>{String(so.subtotal)}</span>

@@ -5,11 +5,21 @@ import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
 import { useCart } from "@/lib/storefront/cart-context";
 import { createStripeCheckout } from "@/modules/storefront/checkout-actions";
+import { gstComponent, applyDiscount } from "@/lib/storefront/gst";
 
-export function CartView() {
+type ActiveDiscount = { title: string; discountPercent: number } | null;
+
+export function CartView({ discount }: { discount: ActiveDiscount }) {
   const { items, updateQuantity, removeItem, subtotal, gst } = useCart();
   const [state, formAction, pending] = useActionState(createStripeCheckout, {});
   const [showCheckout, setShowCheckout] = useState(false);
+
+  // Mirrors checkout-actions.ts exactly: discount comes off the subtotal
+  // first, then GST is recomputed on what's left — so this always matches
+  // what Stripe will actually charge.
+  const discountAmount = discount ? applyDiscount(subtotal, discount.discountPercent) : 0;
+  const discountedSubtotal = subtotal - discountAmount;
+  const discountedGst = discountAmount > 0 ? gstComponent(discountedSubtotal) : gst;
 
   if (items.length === 0) {
     return (
@@ -85,11 +95,25 @@ export function CartView() {
       </div>
 
       <div className="mt-8 flex flex-col gap-2 rounded-2xl bg-[var(--sf-bg-alt)] p-5">
+        {discountAmount > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--sf-muted)]">Subtotal</span>
+            <span className="text-[var(--sf-muted)]">${subtotal.toFixed(2)}</span>
+          </div>
+        )}
+        {discountAmount > 0 && discount && (
+          <div className="flex items-center justify-between text-sm font-medium text-[var(--sf-primary)]">
+            <span>
+              {discount.discountPercent}% off ({discount.title})
+            </span>
+            <span>−${discountAmount.toFixed(2)}</span>
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <span className="text-lg font-semibold text-[var(--sf-fg)]">Total</span>
-          <span className="text-2xl font-semibold text-[var(--sf-primary)]">${subtotal.toFixed(2)}</span>
+          <span className="text-2xl font-semibold text-[var(--sf-primary)]">${discountedSubtotal.toFixed(2)}</span>
         </div>
-        <div className="text-right text-xs text-[var(--sf-muted)]">Includes ${gst.toFixed(2)} GST</div>
+        <div className="text-right text-xs text-[var(--sf-muted)]">Includes ${discountedGst.toFixed(2)} GST</div>
       </div>
 
       {!showCheckout ? (
@@ -143,7 +167,7 @@ export function CartView() {
             disabled={pending}
             className="mt-2 rounded-full bg-[var(--sf-primary)] py-4 text-center text-base font-semibold text-[var(--sf-primary-foreground)] shadow-md shadow-[var(--sf-primary)]/20 transition-transform hover:scale-[1.02] disabled:opacity-60"
           >
-            {pending ? "Redirecting to payment..." : `Pay now — $${subtotal.toFixed(2)}`}
+            {pending ? "Redirecting to payment..." : `Pay now — $${discountedSubtotal.toFixed(2)}`}
           </button>
         </form>
       )}

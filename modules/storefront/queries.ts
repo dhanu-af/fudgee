@@ -82,6 +82,26 @@ export function getActivePromotions() {
   });
 }
 
+// Same active/date-window rule as getActivePromotions(), but scoped to
+// promotions that actually carry a discount and picks the single highest
+// percentage — if two discount promotions are simultaneously active, only
+// the best one applies at checkout (no stacking). Used by checkout-actions.ts
+// and the cart page; unrelated to which promotions are shown as banners.
+export function getBestActiveDiscount() {
+  const now = new Date();
+  return db.promotion.findFirst({
+    where: {
+      isActive: true,
+      discountPercent: { not: null },
+      AND: [
+        { OR: [{ startDate: null }, { startDate: { lte: now } }] },
+        { OR: [{ endDate: null }, { endDate: { gte: now } }] },
+      ],
+    },
+    orderBy: { discountPercent: "desc" },
+  });
+}
+
 // --- Public homepage read (unauthenticated) ---
 // A single aggregate query for the whole page — every list is scoped to
 // isActive/in-stock so draft/inactive admin content never reaches the

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { contactMessageSchema, newsletterSignupSchema, productReviewSchema } from "@/modules/storefront/schema";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { ADMIN_URL } from "@/lib/site-config";
 
 // Every action in this file is called by an unauthenticated site visitor —
 // there is no permission check to fall back on, so input is validated
@@ -23,6 +25,26 @@ export async function submitContactMessage(_prev: ContactFormState, formData: Fo
 
   await db.contactMessage.create({ data: parsed.data });
   revalidatePath("/storefront/messages");
+
+  // Same best-effort shape as the order notifications: awaited (a serverless
+  // function can freeze right after this action returns), wrapped in its own
+  // try/catch, and logged on failure — never blocks the contact form itself.
+  const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER;
+  if (adminNumber) {
+    try {
+      const preview = parsed.data.message.length > 200 ? `${parsed.data.message.slice(0, 200)}…` : parsed.data.message;
+      const message =
+        `📩 New contact message from ${parsed.data.name} (${parsed.data.email})\n` +
+        `"${preview}"\n` +
+        `${ADMIN_URL}/storefront/messages`;
+      const result = await sendWhatsAppMessage(adminNumber, message);
+      if (!result.sent) {
+        console.error("Contact message WhatsApp notification not sent:", result.reason, result.error);
+      }
+    } catch (err) {
+      console.error("Failed to send contact message WhatsApp notification", err);
+    }
+  }
 
   return { success: true };
 }

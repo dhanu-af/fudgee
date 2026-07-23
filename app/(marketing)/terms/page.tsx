@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Fudgee",
+  title: "Terms of Service",
+  description: "Fudgee's terms of service, covering orders, payments, and use of our website.",
+  alternates: { canonical: `${SITE_URL}/terms` },
 };
 
 export default function TermsPage() {

@@ -26,7 +26,7 @@ export function GallerySection({ items }: { items: GalleryItem[] }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.imageUrl}
-                  alt={item.caption || ""}
+                  alt={item.caption || "Fudgee handcrafted fudge and confections"}
                   className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 {item.caption && (

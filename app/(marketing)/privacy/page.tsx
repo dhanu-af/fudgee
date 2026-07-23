@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Fudgee",
+  title: "Privacy Policy",
+  description: "How Fudgee collects, uses, and protects your personal information.",
+  alternates: { canonical: `${SITE_URL}/privacy` },
 };
 
 export default function PrivacyPage() {

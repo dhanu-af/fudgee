@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy — Fudgee",
+  title: "Cookie Policy",
+  description: "How Fudgee uses cookies on our website.",
+  alternates: { canonical: `${SITE_URL}/cookies` },
 };
 
 export default function CookiePolicyPage() {

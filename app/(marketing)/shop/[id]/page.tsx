@@ -6,6 +6,8 @@ import { getPublicProductDetail } from "@/modules/storefront/queries";
 import { ProductGallery } from "@/components/storefront/product-gallery";
 import { AddToCartButton } from "@/components/storefront/add-to-cart-button";
 import { WriteReviewForm } from "@/components/storefront/write-review-form";
+import { JsonLd } from "@/components/seo/json-ld";
+import { SITE_URL } from "@/lib/site-config";
 
 // Consistent with /shop and the homepage — admin-editable, DB-backed
 // content has no upside from build-time static generation here.
@@ -18,10 +20,30 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const data = await getPublicProductDetail(id);
-  if (!data) return { title: "Product not found — Fudgee" };
+  if (!data) return { title: "Product not found" };
+
+  const { product } = data;
+  const description = product.shortDescription ?? product.description ?? undefined;
+  const canonical = `${SITE_URL}/shop/${id}`;
+
   return {
-    title: `${data.product.name} — Fudgee`,
-    description: data.product.shortDescription ?? data.product.description ?? undefined,
+    // Short here, not "Name — Fudgee" — the (marketing) layout's title
+    // template already appends "| Fudgee" to any plain string title.
+    title: product.name,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: product.name,
+      description,
+      url: canonical,
+      type: "website",
+      images: product.imageUrl ? [{ url: product.imageUrl }] : undefined,
+    },
+    twitter: {
+      title: product.name,
+      description,
+      images: product.imageUrl ? [product.imageUrl] : undefined,
+    },
   };
 }
 
@@ -36,6 +58,38 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     (src): src is string => !!src
   );
   const maxBreakdownCount = Math.max(1, ...breakdown.map((b) => b.count));
+  const canonical = `${SITE_URL}/shop/${product.id}`;
+
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.shortDescription ?? product.description ?? undefined,
+    image: images.length > 0 ? images : undefined,
+    sku: product.sku,
+    offers: {
+      "@type": "Offer",
+      url: canonical,
+      priceCurrency: "AUD",
+      price: price !== null ? price.toFixed(2) : undefined,
+      availability: "https://schema.org/InStock",
+    },
+    // Only included with real reviews — Google explicitly disallows a
+    // fabricated aggregateRating with zero underlying reviews.
+    ...(reviewCount > 0 && averageRating !== null
+      ? { aggregateRating: { "@type": "AggregateRating", ratingValue: averageRating.toFixed(1), reviewCount } }
+      : {}),
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Shop", item: `${SITE_URL}/shop` },
+      { "@type": "ListItem", position: 3, name: product.name, item: canonical },
+    ],
+  };
 
   const infoSections = [
     { label: "Description", value: product.description },
@@ -50,6 +104,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12 sm:px-8 sm:py-16">
+      <JsonLd data={productJsonLd} />
+      <JsonLd data={breadcrumbJsonLd} />
       <Link href="/shop" className="text-sm font-medium text-[var(--sf-muted)] hover:text-[var(--sf-fg)]">
         ← Back to shop
       </Link>

@@ -4,7 +4,9 @@ import { db } from "@/lib/db";
 import { ClearCartOnMount } from "@/components/storefront/clear-cart-on-mount";
 
 export const metadata: Metadata = {
-  title: "Payment received — Fudgee",
+  title: "Payment received",
+  // One customer's order confirmation — never indexable.
+  robots: { index: false, follow: false },
 };
 
 // Reads the order straight from our own DB rather than calling Stripe's API —

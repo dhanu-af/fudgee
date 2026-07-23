@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SITE_URL } from "@/lib/site-config";
 import "./globals.css";
 
 const inter = Inter({
@@ -8,7 +9,13 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+// Base metadata for the whole app (both the public storefront and the
+// internal ops dashboard share this root layout). metadataBase is required
+// for any relative OG/Twitter image URL to resolve to an absolute one.
+// Storefront pages override title/description with their own; the dashboard
+// additionally marks itself noindex in (dashboard)/layout.tsx.
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Fudgee",
   description: "Fudgee — manufacturing operations platform",
 };

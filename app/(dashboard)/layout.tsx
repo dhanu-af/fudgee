@@ -1,8 +1,15 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import type { PermissionKey } from "@/lib/rbac/permissions";
+
+// The internal ops dashboard must never be indexed — this is a meta-robots
+// belt-and-suspenders alongside robots.ts disallowing these paths outright.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();

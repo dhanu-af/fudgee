@@ -8,6 +8,7 @@ import { ReviewsSection } from "@/components/storefront/reviews-section";
 import { FaqSection } from "@/components/storefront/faq-section";
 import { AboutSection } from "@/components/storefront/about-section";
 import { ContactSection } from "@/components/storefront/contact-section";
+import { SITE_URL } from "@/lib/site-config";
 
 // Content here is admin-editable via the Storefront CMS, and this page's
 // build-time static prerender was already racing DB migrations twice this
@@ -17,13 +18,22 @@ import { ContactSection } from "@/components/storefront/contact-section";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Fudgee — Handcrafted Fudge & Confections",
+  // No `title` here — inherits the (marketing) layout's `default` title,
+  // which is this exact string. Any plain string set here would otherwise
+  // get wrapped by the layout's "%s | Fudgee" template, duplicating the
+  // brand name.
   description:
     "Small-batch, handcrafted fudge and confections made with real cream and real butter. Shop our full range and order online for delivery.",
+  alternates: { canonical: SITE_URL },
   openGraph: {
     title: "Fudgee — Handcrafted Fudge & Confections",
     description: "Small-batch, handcrafted fudge and confections made with real cream and real butter.",
+    url: SITE_URL,
     type: "website",
+  },
+  twitter: {
+    title: "Fudgee — Handcrafted Fudge & Confections",
+    description: "Small-batch, handcrafted fudge and confections made with real cream and real butter.",
   },
 };
 

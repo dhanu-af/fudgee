@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { CartView } from "@/components/storefront/cart-view";
 
 export const metadata: Metadata = {
-  title: "Your Cart — Fudgee",
+  title: "Your Cart",
+  // Transactional, per-visitor content — not worth indexing.
+  robots: { index: false, follow: true },
 };
 
 // Client-side cart state + a bound server action make this page unsuitable

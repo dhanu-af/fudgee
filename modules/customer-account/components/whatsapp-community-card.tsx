@@ -1,5 +1,3 @@
-import { WHATSAPP_COMMUNITY_URL } from "@/lib/site-config";
-
 function WhatsAppIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -9,7 +7,9 @@ function WhatsAppIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-export function WhatsAppCommunityCard() {
+export function WhatsAppCommunityCard({ url }: { url: string | null }) {
+  if (!url) return null;
+
   return (
     <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--sf-primary-soft)] to-[var(--sf-accent-soft)] p-6 ring-1 ring-[var(--sf-border)] transition-shadow hover:shadow-lg sm:p-8">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -32,7 +32,7 @@ export function WhatsAppCommunityCard() {
         </div>
 
         <a
-          href={WHATSAPP_COMMUNITY_URL}
+          href={url}
           target="_blank"
           rel="noopener noreferrer"
           className="flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--sf-primary)] px-8 py-3.5 text-base font-semibold text-[var(--sf-primary-foreground)] shadow-md transition-transform hover:scale-105"

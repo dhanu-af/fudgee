@@ -639,6 +639,7 @@ model StorefrontSettings {
   contactAddress       String?
   openingHours         String?
   whatsappNumber       String?
+  whatsappCommunityUrl String?
   instagramUrl         String?
   facebookUrl          String?
   tiktokUrl            String?

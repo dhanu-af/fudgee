@@ -20,6 +20,7 @@ type StorefrontSettings = {
   contactAddress: string | null;
   openingHours: string | null;
   whatsappNumber: string | null;
+  whatsappCommunityUrl: string | null;
   instagramUrl: string | null;
   facebookUrl: string | null;
   tiktokUrl: string | null;
@@ -89,6 +90,18 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
             placeholder="+61 4XX XXX XXX"
             defaultValue={settings?.whatsappNumber ?? ""}
           />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="whatsappCommunityUrl">WhatsApp Community invite link</Label>
+          <Input
+            id="whatsappCommunityUrl"
+            name="whatsappCommunityUrl"
+            placeholder="https://chat.whatsapp.com/..."
+            defaultValue={settings?.whatsappCommunityUrl ?? ""}
+          />
+          <p className="text-xs text-muted-foreground">
+            Powers the &quot;Join WhatsApp Community&quot; card on the customer Account page. Leave blank to hide it.
+          </p>
         </div>
       </section>
 

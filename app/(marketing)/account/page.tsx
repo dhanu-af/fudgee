@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireCustomer } from "@/lib/customer-auth";
 import { getCustomerOrderHistory } from "@/modules/customer-account/queries";
-import { getActivePromotions } from "@/modules/storefront/queries";
+import { getActivePromotions, getStorefrontSettings } from "@/modules/storefront/queries";
 import { OrderHistory } from "@/modules/customer-account/components/order-history";
 import { SignOutButton } from "@/modules/customer-account/components/sign-out-button";
 import { RewardsCard } from "@/modules/customer-account/components/rewards-card";
@@ -19,7 +19,11 @@ export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
   const customer = await requireCustomer();
-  const [orders, promotions] = await Promise.all([getCustomerOrderHistory(customer.id), getActivePromotions()]);
+  const [orders, promotions, settings] = await Promise.all([
+    getCustomerOrderHistory(customer.id),
+    getActivePromotions(),
+    getStorefrontSettings(),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
@@ -39,7 +43,7 @@ export default async function AccountPage() {
       </div>
 
       <div className="mb-8">
-        <WhatsAppCommunityCard />
+        <WhatsAppCommunityCard url={settings?.whatsappCommunityUrl ?? null} />
       </div>
 
       <div className="mb-8">

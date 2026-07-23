@@ -90,6 +90,7 @@ export const storefrontSettingsSchema = z.object({
   contactAddress: optionalText(500),
   openingHours: optionalText(500),
   whatsappNumber: optionalText(50),
+  whatsappCommunityUrl: optionalText(300),
   instagramUrl: optionalText(300),
   facebookUrl: optionalText(300),
   tiktokUrl: optionalText(300),

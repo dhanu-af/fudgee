@@ -9,7 +9,3 @@ export const SITE_NAME = "Fudgee";
 // paths here and storefront-only paths back to SITE_URL).
 export const ADMIN_URL = "https://admin.fudgee.au";
 export const ADMIN_HOST = "admin.fudgee.au";
-
-// TODO: replace with the real "Fudgee Family" WhatsApp Community invite link
-// (chat.whatsapp.com/...) — placeholder until Dhanu provides it.
-export const WHATSAPP_COMMUNITY_URL = "https://chat.whatsapp.com/REPLACE_ME";

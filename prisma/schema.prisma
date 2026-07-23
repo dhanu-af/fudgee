@@ -209,12 +209,35 @@ model Customer {
   // existing guest-checkout Customer row sharing that email rather than
   // creating a duplicate — so past guest orders show up in their history.
   passwordHash    String?
+  // Running balance — 1 point per dollar of subtotal, awarded automatically
+  // when a storefront order is marked PAID (see app/api/webhooks/stripe's
+  // checkout.session.completed handler). Kept in sync with, and always
+  // re-derivable from, the sum of RewardsLedgerEntry.points below — a plain
+  // column here just avoids re-summing the ledger on every account-page load.
+  rewardsPoints   Int          @default(0)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   salesOrders     SalesOrder[]
   returns         Return[]
   invoices        Invoice[]
   sessions        CustomerSession[]
+  rewardsLedger   RewardsLedgerEntry[]
+}
+
+// One entry per order that earned points — @@unique(salesOrderId) is what
+// makes awarding idempotent (a retried Stripe webhook delivery can't
+// double-award, since the second insert just fails the unique check and is
+// swallowed). No redemption/spend side yet — see the account page's rewards
+// card copy; that's a deliberate follow-up once there's a real discount/
+// coupon mechanism at checkout to redeem points against.
+model RewardsLedgerEntry {
+  id           String   @id @default(cuid())
+  customerId   String
+  points       Int
+  reason       String
+  salesOrderId String?  @unique
+  createdAt    DateTime @default(now())
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
 
 // A completely separate, DB-backed session mechanism for storefront

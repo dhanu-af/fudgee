@@ -1,4 +1,5 @@
 import type { getCustomerOrderHistory } from "@/modules/customer-account/queries";
+import { ReorderButton } from "@/modules/customer-account/components/reorder-button";
 
 type Orders = Awaited<ReturnType<typeof getCustomerOrderHistory>>;
 
@@ -32,13 +33,22 @@ export function OrderHistory({ orders }: { orders: Orders }) {
               </p>
               <p className="text-xs text-[var(--sf-muted)]">{new Date(order.orderDate).toLocaleDateString()}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <span className="rounded-full bg-[var(--sf-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--sf-primary)]">
                 {STATUS_LABEL[order.status] ?? order.status}
               </span>
               <span className="text-sm font-semibold text-[var(--sf-fg)]">
                 ${Number(order.total).toFixed(2)}
               </span>
+              <ReorderButton
+                lines={order.lines.map((line) => ({
+                  productId: line.productId,
+                  name: line.product.name,
+                  sellPrice: line.product.sellPrice,
+                  imageUrl: line.product.imageUrl,
+                  quantity: line.quantity,
+                }))}
+              />
             </div>
           </div>
 

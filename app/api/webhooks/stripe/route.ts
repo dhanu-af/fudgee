@@ -42,7 +42,35 @@ export async function POST(request: Request) {
               typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
           },
         });
+
+        // Rewards: 1 point per dollar of subtotal. Separately idempotent via
+        // RewardsLedgerEntry's unique salesOrderId — belt-and-suspenders
+        // alongside the paymentStatus check above, in case this handler is
+        // ever reached a second time some other way.
+        const points = Math.floor(Number(order.subtotal));
+        if (points > 0) {
+          try {
+            await db.$transaction([
+              db.rewardsLedgerEntry.create({
+                data: {
+                  customerId: order.customerId,
+                  points,
+                  reason: `Order SO-${String(order.seq).padStart(4, "0")}`,
+                  salesOrderId: order.id,
+                },
+              }),
+              db.customer.update({
+                where: { id: order.customerId },
+                data: { rewardsPoints: { increment: points } },
+              }),
+            ]);
+          } catch {
+            // Unique constraint on salesOrderId hit — already awarded.
+          }
+        }
+
         revalidatePath("/sales-orders");
+        revalidatePath("/account");
       }
     }
   }

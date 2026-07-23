@@ -65,29 +65,33 @@ export function getNewsletterSignups() {
   return db.newsletterSignup.findMany({ orderBy: { createdAt: "desc" } });
 }
 
+// Active AND (not yet started, or already started) AND (no end, or not yet
+// ended) — lets a promo be scheduled ahead of time, or just toggled by hand
+// for a same-day one. Shared by the homepage and the customer account page.
+export function getActivePromotions() {
+  const now = new Date();
+  return db.promotion.findMany({
+    where: {
+      isActive: true,
+      AND: [
+        { OR: [{ startDate: null }, { startDate: { lte: now } }] },
+        { OR: [{ endDate: null }, { endDate: { gte: now } }] },
+      ],
+    },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+  });
+}
+
 // --- Public homepage read (unauthenticated) ---
 // A single aggregate query for the whole page — every list is scoped to
 // isActive/in-stock so draft/inactive admin content never reaches the
 // public site.
 
 export async function getStorefrontHomepageData() {
-  const now = new Date();
   const [settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems] =
     await Promise.all([
       db.storefrontSettings.findFirst(),
-      // Active AND (not yet started, or already started) AND (no end, or not
-      // yet ended) — lets a promo be scheduled ahead of time, or just
-      // toggled by hand for a same-day one.
-      db.promotion.findMany({
-        where: {
-          isActive: true,
-          AND: [
-            { OR: [{ startDate: null }, { startDate: { lte: now } }] },
-            { OR: [{ endDate: null }, { endDate: { gte: now } }] },
-          ],
-        },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-      }),
+      getActivePromotions(),
       db.category.findMany({
         where: { isActive: true },
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],

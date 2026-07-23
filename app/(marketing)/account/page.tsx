@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireCustomer } from "@/lib/customer-auth";
 import { getCustomerOrderHistory } from "@/modules/customer-account/queries";
+import { getActivePromotions } from "@/modules/storefront/queries";
 import { OrderHistory } from "@/modules/customer-account/components/order-history";
 import { SignOutButton } from "@/modules/customer-account/components/sign-out-button";
+import { RewardsCard } from "@/modules/customer-account/components/rewards-card";
 
 export const metadata: Metadata = {
   title: "My Account",
@@ -16,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
   const customer = await requireCustomer();
-  const orders = await getCustomerOrderHistory(customer.id);
+  const [orders, promotions] = await Promise.all([getCustomerOrderHistory(customer.id), getActivePromotions()]);
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
@@ -34,6 +36,28 @@ export default async function AccountPage() {
           <SignOutButton />
         </div>
       </div>
+
+      <div className="mb-8">
+        <RewardsCard points={customer.rewardsPoints} />
+      </div>
+
+      {promotions.length > 0 && (
+        <div className="mb-8 flex flex-col gap-3">
+          <h2 className="font-display text-xl font-semibold text-[var(--sf-fg)]">Current Promotions</h2>
+          {promotions.map((promo) => (
+            <div key={promo.id} className="rounded-2xl bg-[var(--sf-primary-soft)] p-4">
+              <p className="font-semibold text-[var(--sf-fg)]">{promo.title}</p>
+              {promo.description && <p className="text-sm text-[var(--sf-muted)]">{promo.description}</p>}
+              <Link
+                href={promo.linkUrl || "/shop"}
+                className="mt-2 inline-block text-sm font-semibold text-[var(--sf-primary)] hover:underline"
+              >
+                {promo.linkLabel || "Shop Now"} →
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
 
       <h2 className="mb-4 font-display text-xl font-semibold text-[var(--sf-fg)]">Your orders</h2>
       <OrderHistory orders={orders} />

@@ -1,15 +1,22 @@
 import type { MetadataRoute } from "next";
-import { SITE_URL } from "@/lib/site-config";
+import { headers } from "next/headers";
+import { SITE_URL, ADMIN_HOST } from "@/lib/site-config";
 
-// The internal ops dashboard shares this same app on the same domain — its
-// routes are flat top-level paths (/sales-orders, /finance, /production,
-// etc.), not grouped under one common prefix, so rather than enumerate every
-// dashboard route, disallow everything by default and explicitly allow only
-// the known public storefront paths. The more specific Allow rules win over
-// the blanket Disallow (documented crawler precedence rule), matching the
-// per-page `robots: { index: false }` already set on /(dashboard)/**,
-// /(auth)/**, and /unauthorized as a second layer of protection.
-export default function robots(): MetadataRoute.Robots {
+// Reads the request host so the two subdomains get different rules: the
+// storefront allows its real public pages, the admin subdomain is blocked
+// outright. Even though staff-only paths now redirect away from the
+// storefront host entirely (see middleware.ts), the allowlist below stays as
+// a second layer of protection — cheap insurance against a future path that
+// forgets to redirect.
+export const dynamic = "force-dynamic";
+
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const host = (await headers()).get("host") ?? "";
+
+  if (host === ADMIN_HOST || host.startsWith(`${ADMIN_HOST}:`)) {
+    return { rules: { userAgent: "*", disallow: "/" } };
+  }
+
   return {
     rules: {
       userAgent: "*",

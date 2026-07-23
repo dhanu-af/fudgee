@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { ADMIN_URL } from "@/lib/site-config";
 
 // This is the only place a storefront order is ever marked PAID — the
 // checkout success-page redirect is cosmetic only (a customer can close the
@@ -29,7 +31,10 @@ export async function POST(request: Request) {
     const salesOrderId = session.metadata?.salesOrderId;
 
     if (salesOrderId) {
-      const order = await db.salesOrder.findUnique({ where: { id: salesOrderId } });
+      const order = await db.salesOrder.findUnique({
+        where: { id: salesOrderId },
+        include: { customer: true },
+      });
       // Idempotent: Stripe retries webhook delivery, so skip if already applied.
       if (order && order.paymentStatus !== "PAID") {
         await db.salesOrder.update({
@@ -66,6 +71,26 @@ export async function POST(request: Request) {
             ]);
           } catch {
             // Unique constraint on salesOrderId hit — already awarded.
+          }
+        }
+
+        // Awaited (not fire-and-forget) since a serverless function can be
+        // frozen the instant this handler returns, which would cut off an
+        // in-flight fetch. A delivery failure is logged but never blocks the
+        // order itself from being confirmed and paid.
+        const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER;
+        if (adminNumber) {
+          try {
+            const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
+            const message =
+              `🛒 New order ${orderNumber} from ${order.customer.name} — $${Number(order.total).toFixed(2)} AUD\n` +
+              `${ADMIN_URL}/sales-orders/${order.id}`;
+            const result = await sendWhatsAppMessage(adminNumber, message);
+            if (!result.sent) {
+              console.error("Order notification WhatsApp message not sent:", result.reason, result.error);
+            }
+          } catch (err) {
+            console.error("Failed to send order notification via WhatsApp", err);
           }
         }
 

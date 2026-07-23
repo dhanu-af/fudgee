@@ -49,3 +49,27 @@ export async function sendWhatsAppMessage(
 
   return { sent: true };
 }
+
+export type AdminNotifyResult = { to: string; sent: boolean; error?: string };
+
+// ADMIN_WHATSAPP_NUMBER may hold one number or a comma-separated list — every
+// caller that notifies "the admin" (order placed, order paid, contact form,
+// the test button) goes through here so they all reach every configured
+// recipient the same way, without each call site re-implementing the split.
+export async function notifyAdmins(text: string): Promise<AdminNotifyResult[]> {
+  const numbers = (process.env.ADMIN_WHATSAPP_NUMBER ?? "")
+    .split(",")
+    .map((n) => n.trim())
+    .filter(Boolean);
+
+  const results: AdminNotifyResult[] = [];
+  for (const to of numbers) {
+    try {
+      const result = await sendWhatsAppMessage(to, text);
+      results.push(result.sent ? { to, sent: true } : { to, sent: false, error: result.error ?? result.reason });
+    } catch (err) {
+      results.push({ to, sent: false, error: err instanceof Error ? err.message : "Unknown error" });
+    }
+  }
+  return results;
+}

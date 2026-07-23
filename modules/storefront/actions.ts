@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
-import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { notifyAdmins, type AdminNotifyResult } from "@/lib/whatsapp";
 import {
   categorySchema,
   galleryItemSchema,
@@ -346,27 +346,26 @@ export async function updateStorefrontSettings(
 
 // --- WhatsApp integration test (one-off connectivity check, not tied to any DB row) ---
 
+export type WhatsAppTestState = { error?: string; results?: AdminNotifyResult[] };
+
 export async function sendTestWhatsAppMessage(
-  _prev: StorefrontFormState,
+  _prev: WhatsAppTestState,
   _formData: FormData
-): Promise<StorefrontFormState> {
+): Promise<WhatsAppTestState> {
   await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
 
-  const to = process.env.ADMIN_WHATSAPP_NUMBER;
-  if (!to) {
+  if (!process.env.ADMIN_WHATSAPP_NUMBER) {
     return { error: "ADMIN_WHATSAPP_NUMBER is not set in Vercel's Environment Variables yet." };
   }
-
-  const result = await sendWhatsAppMessage(to, "Fudgee WhatsApp integration is working successfully.");
-  if (!result.sent) {
-    return {
-      error:
-        result.reason === "not_configured"
-          ? "WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID is not set in Vercel's Environment Variables yet."
-          : `Meta rejected the message: ${result.error ?? "unknown error"}`,
-    };
+  if (!process.env.WHATSAPP_ACCESS_TOKEN || !process.env.WHATSAPP_PHONE_NUMBER_ID) {
+    return { error: "WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID is not set in Vercel's Environment Variables yet." };
   }
-  return { success: true };
+
+  // Sends to every configured recipient individually — one failing never
+  // stops the rest, and every result (success or failure) is returned so
+  // the button can show exactly which number(s) didn't get the message.
+  const results = await notifyAdmins("Fudgee WhatsApp integration is working successfully.");
+  return { results };
 }
 
 // --- Contact messages / newsletter signups (inbound-only, no edit form) ---

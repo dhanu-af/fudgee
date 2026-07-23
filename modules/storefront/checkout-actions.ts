@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
-import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { notifyAdmins } from "@/lib/whatsapp";
 import { ADMIN_URL } from "@/lib/site-config";
 import { gstComponent } from "@/lib/storefront/gst";
 import { getCustomerSession } from "@/lib/customer-auth";
@@ -131,16 +131,15 @@ export async function createStripeCheckout(
   // forget) since a serverless function can be frozen right after this
   // action returns/redirects; a delivery failure is logged but never blocks
   // checkout itself.
-  const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER;
-  if (adminNumber) {
+  if (process.env.ADMIN_WHATSAPP_NUMBER) {
     try {
       const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
       const message =
         `🛒 New order ${orderNumber} from ${customer.name} — $${Number(order.total).toFixed(2)} AUD (payment pending)\n` +
         `${ADMIN_URL}/sales-orders/${order.id}`;
-      const result = await sendWhatsAppMessage(adminNumber, message);
-      if (!result.sent) {
-        console.error("Order-placed WhatsApp notification not sent:", result.reason, result.error);
+      const results = await notifyAdmins(message);
+      for (const r of results) {
+        if (!r.sent) console.error("Order-placed WhatsApp notification not sent to", r.to, ":", r.error);
       }
     } catch (err) {
       console.error("Failed to send order-placed WhatsApp notification", err);

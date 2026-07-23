@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
-import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { notifyAdmins } from "@/lib/whatsapp";
 import { ADMIN_URL } from "@/lib/site-config";
 
 // This is the only place a storefront order is ever marked PAID — the
@@ -78,16 +78,15 @@ export async function POST(request: Request) {
         // frozen the instant this handler returns, which would cut off an
         // in-flight fetch. A delivery failure is logged but never blocks the
         // order itself from being confirmed and paid.
-        const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER;
-        if (adminNumber) {
+        if (process.env.ADMIN_WHATSAPP_NUMBER) {
           try {
             const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
             const message =
               `🛒 New order ${orderNumber} from ${order.customer.name} — $${Number(order.total).toFixed(2)} AUD\n` +
               `${ADMIN_URL}/sales-orders/${order.id}`;
-            const result = await sendWhatsAppMessage(adminNumber, message);
-            if (!result.sent) {
-              console.error("Order notification WhatsApp message not sent:", result.reason, result.error);
+            const results = await notifyAdmins(message);
+            for (const r of results) {
+              if (!r.sent) console.error("Order notification WhatsApp message not sent to", r.to, ":", r.error);
             }
           } catch (err) {
             console.error("Failed to send order notification via WhatsApp", err);

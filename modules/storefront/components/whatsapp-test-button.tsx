@@ -11,9 +11,9 @@ export function WhatsAppTestButton() {
     <section className="flex max-w-2xl flex-col gap-3">
       <h2 className="text-lg font-semibold tracking-tight">WhatsApp integration test</h2>
       <p className="text-sm text-muted-foreground">
-        Sends a one-off test message to <code>ADMIN_WHATSAPP_NUMBER</code> using the{" "}
-        <code>WHATSAPP_ACCESS_TOKEN</code> / <code>WHATSAPP_PHONE_NUMBER_ID</code> configured in Vercel — the same
-        connection the order notification will use once it's turned on.
+        Sends a one-off test message to every number in <code>ADMIN_WHATSAPP_NUMBER</code> (comma-separate multiple
+        numbers) using the <code>WHATSAPP_ACCESS_TOKEN</code> / <code>WHATSAPP_PHONE_NUMBER_ID</code> configured in
+        Vercel — the same connection the order and contact-form notifications use.
       </p>
       <form action={formAction}>
         <Button type="submit" disabled={pending} className="w-fit">
@@ -21,8 +21,14 @@ export function WhatsAppTestButton() {
         </Button>
       </form>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
-      {state.success && (
-        <p className="text-sm text-primary">Sent — check your WhatsApp for &quot;Fudgee WhatsApp integration is working successfully.&quot;</p>
+      {state.results && (
+        <ul className="flex flex-col gap-1">
+          {state.results.map((r) => (
+            <li key={r.to} className={`text-sm ${r.sent ? "text-primary" : "text-destructive"}`}>
+              {r.to}: {r.sent ? "Sent" : `Failed — ${r.error ?? "unknown error"}`}
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );

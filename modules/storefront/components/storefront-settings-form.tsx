@@ -23,6 +23,7 @@ type StorefrontSettings = {
   whatsappCommunityUrl: string | null;
   instagramUrl: string | null;
   facebookUrl: string | null;
+  facebookFanPageUrl: string | null;
   tiktokUrl: string | null;
   newsletterHeading: string | null;
   newsletterSubheading: string | null;
@@ -124,6 +125,19 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
             placeholder="https://facebook.com/yourpage"
             defaultValue={settings?.facebookUrl ?? ""}
           />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="facebookFanPageUrl">Facebook Fan Page URL</Label>
+          <Input
+            id="facebookFanPageUrl"
+            name="facebookFanPageUrl"
+            placeholder="https://facebook.com/yourpage"
+            defaultValue={settings?.facebookFanPageUrl ?? ""}
+          />
+          <p className="text-xs text-muted-foreground">
+            Powers the &quot;Follow on Facebook&quot; card on the homepage, footer, and customer Account page —
+            separate from the Facebook URL above (which is just the small footer icon). Leave blank to hide it.
+          </p>
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="tiktokUrl">TikTok URL</Label>

@@ -642,6 +642,7 @@ model StorefrontSettings {
   whatsappCommunityUrl String?
   instagramUrl         String?
   facebookUrl          String?
+  facebookFanPageUrl   String?
   tiktokUrl            String?
   newsletterHeading    String?
   newsletterSubheading String?

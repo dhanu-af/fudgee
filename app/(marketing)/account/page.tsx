@@ -7,6 +7,7 @@ import { OrderHistory } from "@/modules/customer-account/components/order-histor
 import { SignOutButton } from "@/modules/customer-account/components/sign-out-button";
 import { RewardsCard } from "@/modules/customer-account/components/rewards-card";
 import { WhatsAppCommunityCard } from "@/modules/customer-account/components/whatsapp-community-card";
+import { FacebookFanPageCard } from "@/components/storefront/facebook-fanpage-card";
 
 export const metadata: Metadata = {
   title: "My Account",
@@ -42,8 +43,9 @@ export default async function AccountPage() {
         </div>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-8 flex flex-col gap-6">
         <WhatsAppCommunityCard url={settings?.whatsappCommunityUrl ?? null} />
+        <FacebookFanPageCard url={settings?.facebookFanPageUrl ?? null} />
       </div>
 
       <div className="mb-8">

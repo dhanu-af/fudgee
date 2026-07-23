@@ -6,6 +6,7 @@ import { getActivePromotions } from "@/modules/storefront/queries";
 import { OrderHistory } from "@/modules/customer-account/components/order-history";
 import { SignOutButton } from "@/modules/customer-account/components/sign-out-button";
 import { RewardsCard } from "@/modules/customer-account/components/rewards-card";
+import { WhatsAppCommunityCard } from "@/modules/customer-account/components/whatsapp-community-card";
 
 export const metadata: Metadata = {
   title: "My Account",
@@ -35,6 +36,10 @@ export default async function AccountPage() {
           </Link>
           <SignOutButton />
         </div>
+      </div>
+
+      <div className="mb-8">
+        <WhatsAppCommunityCard />
       </div>
 
       <div className="mb-8">

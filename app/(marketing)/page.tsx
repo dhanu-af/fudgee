@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getStorefrontHomepageData } from "@/modules/storefront/queries";
 import { HeroSection } from "@/components/storefront/hero-section";
+import { PromotionsSection } from "@/components/storefront/promotions-section";
 import { CategoriesSection } from "@/components/storefront/categories-section";
 import { ProductGridSection } from "@/components/storefront/product-grid-section";
 import { GallerySection } from "@/components/storefront/gallery-section";
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StorefrontHomePage() {
-  const { settings, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems } =
+  const { settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems } =
     await getStorefrontHomepageData();
 
   const shopableCategories = categories.map((c) => ({
@@ -55,6 +56,7 @@ export default async function StorefrontHomePage() {
         subheading={settings?.heroSubheading ?? null}
         imageUrl={settings?.heroImageUrl ?? null}
       />
+      <PromotionsSection promotions={promotions} />
       <CategoriesSection categories={shopableCategories} />
       <ProductGridSection
         id="featured"

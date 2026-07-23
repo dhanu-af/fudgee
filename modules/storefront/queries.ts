@@ -45,6 +45,14 @@ export function getFaqItemById(id: string) {
   return db.faqItem.findUnique({ where: { id } });
 }
 
+export function getPromotions() {
+  return db.promotion.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] });
+}
+
+export function getPromotionById(id: string) {
+  return db.promotion.findUnique({ where: { id } });
+}
+
 export function getStorefrontSettings() {
   return db.storefrontSettings.findFirst();
 }
@@ -63,9 +71,23 @@ export function getNewsletterSignups() {
 // public site.
 
 export async function getStorefrontHomepageData() {
-  const [settings, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems] =
+  const now = new Date();
+  const [settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems] =
     await Promise.all([
       db.storefrontSettings.findFirst(),
+      // Active AND (not yet started, or already started) AND (no end, or not
+      // yet ended) — lets a promo be scheduled ahead of time, or just
+      // toggled by hand for a same-day one.
+      db.promotion.findMany({
+        where: {
+          isActive: true,
+          AND: [
+            { OR: [{ startDate: null }, { startDate: { lte: now } }] },
+            { OR: [{ endDate: null }, { endDate: { gte: now } }] },
+          ],
+        },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      }),
       db.category.findMany({
         where: { isActive: true },
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -96,7 +118,7 @@ export async function getStorefrontHomepageData() {
       db.faqItem.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
     ]);
 
-  return { settings, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems };
+  return { settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems };
 }
 
 // Every purchasable product (for the shop/cart), grouped implicitly by

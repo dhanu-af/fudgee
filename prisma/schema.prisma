@@ -579,6 +579,27 @@ model FaqItem {
   updatedAt DateTime @updatedAt
 }
 
+// A homepage promo banner (e.g. "20% off this week"). `isActive` is a manual
+// on/off switch; `startDate`/`endDate` are an optional scheduling window on
+// top of that — both null means "show it as soon as it's active, forever."
+// The public query ANDs isActive with both date checks (see
+// getStorefrontHomepageData) so a Promotion can be created ahead of time and
+// left to start/stop itself, or just toggled by hand for a same-day promo.
+model Promotion {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String?
+  linkUrl     String?
+  linkLabel   String?
+  startDate   DateTime?
+  endDate     DateTime?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 // Single-row settings for the public homepage's non-repeating copy (hero,
 // about, contact, newsletter blurb) — same singleton pattern as
 // Organization above, edited via one form rather than a collection.

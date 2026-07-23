@@ -10,6 +10,7 @@ import {
   galleryItemSchema,
   reviewSchema,
   faqItemSchema,
+  promotionSchema,
   storefrontSettingsSchema,
 } from "@/modules/storefront/schema";
 
@@ -248,6 +249,75 @@ export async function deleteFaqItem(
 
   revalidatePath("/storefront/faq");
   redirect("/storefront/faq");
+}
+
+// --- Promotions ---
+
+export async function createPromotion(
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = promotionSchema.safeParse({
+    title: formData.get("title"),
+    description: formData.get("description"),
+    imageUrl: formData.get("imageUrl"),
+    linkUrl: formData.get("linkUrl"),
+    linkLabel: formData.get("linkLabel"),
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
+    sortOrder: formData.get("sortOrder"),
+    isActive: formData.get("isActive") === "on",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.promotion.create({ data: parsed.data });
+
+  revalidatePath("/storefront/promotions");
+  revalidatePath("/");
+  redirect("/storefront/promotions");
+}
+
+export async function updatePromotion(
+  id: string,
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = promotionSchema.safeParse({
+    title: formData.get("title"),
+    description: formData.get("description"),
+    imageUrl: formData.get("imageUrl"),
+    linkUrl: formData.get("linkUrl"),
+    linkLabel: formData.get("linkLabel"),
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
+    sortOrder: formData.get("sortOrder"),
+    isActive: formData.get("isActive") === "on",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.promotion.update({ where: { id }, data: parsed.data });
+
+  revalidatePath("/storefront/promotions");
+  revalidatePath("/");
+  redirect("/storefront/promotions");
+}
+
+export async function deletePromotion(
+  id: string,
+  _prev: StorefrontFormState,
+  _formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
+
+  await db.promotion.delete({ where: { id } }).catch(() => null);
+
+  revalidatePath("/storefront/promotions");
+  revalidatePath("/");
+  redirect("/storefront/promotions");
 }
 
 // --- Storefront settings (singleton — self-initializes on first save) ---

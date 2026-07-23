@@ -21,7 +21,7 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--sf-border)] bg-[var(--sf-bg)]/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
-        <Link href="/" className="font-display text-2xl font-semibold tracking-tight text-[var(--sf-primary)]">
+        <Link href="/" className="font-display text-3xl font-semibold tracking-tight text-[var(--sf-primary)] sm:text-4xl">
           fudgee.
         </Link>
 

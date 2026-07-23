@@ -11,6 +11,27 @@ const optionalText = (max: number) =>
     .or(z.literal(""))
     .transform((v) => (v === "" || v === undefined ? null : v));
 
+// A URL-specific variant of optionalText: extracts a bare http(s) link out of
+// pasted text (e.g. WhatsApp's own "share" text prepends a label before the
+// link) and fixes a stray single slash after the scheme, then validates
+// what's left is an actual URL. Without this, a share-text paste like
+// "Open this link to join my WhatsApp Group: https:/chat.whatsapp.com/xyz"
+// would silently save verbatim and quietly break the button it powers.
+const optionalUrl = (max: number) =>
+  z
+    .string()
+    .max(max + 300)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => {
+      if (v === "" || v === undefined) return null;
+      const stripped = v.replace(/[\u200B-\u200F\u2028-\u202F]/g, "").trim();
+      const match = stripped.match(/https?:\/*\S+/i);
+      if (!match) return stripped;
+      return match[0].replace(/^(https?):\/(?!\/)/i, "$1://");
+    })
+    .pipe(z.string().max(max).url("Must be a valid link, e.g. https://chat.whatsapp.com/...").nullable());
+
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const categorySchema = z.object({
@@ -90,11 +111,11 @@ export const storefrontSettingsSchema = z.object({
   contactAddress: optionalText(500),
   openingHours: optionalText(500),
   whatsappNumber: optionalText(50),
-  whatsappCommunityUrl: optionalText(300),
-  instagramUrl: optionalText(300),
-  facebookUrl: optionalText(300),
-  facebookFanPageUrl: optionalText(300),
-  tiktokUrl: optionalText(300),
+  whatsappCommunityUrl: optionalUrl(300),
+  instagramUrl: optionalUrl(300),
+  facebookUrl: optionalUrl(300),
+  facebookFanPageUrl: optionalUrl(300),
+  tiktokUrl: optionalUrl(300),
   newsletterHeading: optionalText(200),
   newsletterSubheading: optionalText(500),
 });

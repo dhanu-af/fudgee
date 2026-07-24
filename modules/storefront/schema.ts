@@ -162,6 +162,7 @@ export const checkoutSchema = z.object({
   shippingAddress: z.string().min(1, "Delivery address is required").max(500),
   notes: z.string().max(1000).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
   linesJson: z.string().min(1),
+  promoCode: z.string().max(30).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 

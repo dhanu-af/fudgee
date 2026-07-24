@@ -222,6 +222,27 @@ model Customer {
   invoices        Invoice[]
   sessions        CustomerSession[]
   rewardsLedger   RewardsLedgerEntry[]
+  promoCodes      PromoCode[]
+}
+
+// A special, single-customer discount code — distinct from Promotion's
+// sitewide/spend-tier discounts above. Assigned by an admin from this
+// customer's own edit page, shown on their account page, and redeemed by
+// typing it in at checkout (see getValidPromoCode() in
+// modules/customers/queries.ts). Overrides, rather than stacks with, any
+// active Promotion discount when redeemed.
+model PromoCode {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  customerId      String
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  discountPercent Int
+  expiresAt       DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([customerId])
 }
 
 // One entry per order that earned points — @@unique(salesOrderId) is what

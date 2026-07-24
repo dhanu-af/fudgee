@@ -3,9 +3,11 @@ import Link from "next/link";
 import { requireCustomer } from "@/lib/customer-auth";
 import { getCustomerOrderHistory } from "@/modules/customer-account/queries";
 import { getActivePromotions, getStorefrontSettings } from "@/modules/storefront/queries";
+import { getCustomerActivePromoCodes } from "@/modules/customers/queries";
 import { OrderHistory } from "@/modules/customer-account/components/order-history";
 import { SignOutButton } from "@/modules/customer-account/components/sign-out-button";
 import { RewardsCard } from "@/modules/customer-account/components/rewards-card";
+import { PromoCodeCard } from "@/modules/customer-account/components/promo-code-card";
 import { WhatsAppCommunityCard } from "@/modules/customer-account/components/whatsapp-community-card";
 import { FacebookFanPageCard } from "@/components/storefront/facebook-fanpage-card";
 
@@ -20,10 +22,11 @@ export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
   const customer = await requireCustomer();
-  const [orders, promotions, settings] = await Promise.all([
+  const [orders, promotions, settings, promoCodes] = await Promise.all([
     getCustomerOrderHistory(customer.id),
     getActivePromotions(),
     getStorefrontSettings(),
+    getCustomerActivePromoCodes(customer.id),
   ]);
 
   return (
@@ -50,6 +53,10 @@ export default async function AccountPage() {
 
       <div className="mb-8">
         <RewardsCard points={customer.rewardsPoints} />
+      </div>
+
+      <div className="mb-8">
+        <PromoCodeCard promoCodes={promoCodes} />
       </div>
 
       {promotions.length > 0 && (

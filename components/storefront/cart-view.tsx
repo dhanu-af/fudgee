@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
 import { useCart } from "@/lib/storefront/cart-context";
 import { createStripeCheckout } from "@/modules/storefront/checkout-actions";
+import { applyPromoCode } from "@/modules/customers/actions";
 import { gstComponent, applyDiscount } from "@/lib/storefront/gst";
 
 type DiscountTier = { title: string; discountPercent: number; minimumSpend: number | null };
@@ -13,13 +14,22 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
   const { items, updateQuantity, removeItem, subtotal, gst } = useCart();
   const [state, formAction, pending] = useActionState(createStripeCheckout, {});
   const [showCheckout, setShowCheckout] = useState(false);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [promoState, promoFormAction, promoPending] = useActionState(applyPromoCode, {});
 
   // Picks the highest-percent tier whose minimum spend (if any) the current
   // subtotal meets — mirrors checkout-actions.ts's server-side selection
   // (getBestActiveDiscount(rawSubtotal)) exactly, so this preview always
   // matches what Stripe will actually charge.
-  const discount =
+  const tierDiscount =
     discounts.find((d) => d.minimumSpend == null || subtotal >= d.minimumSpend) ?? null;
+
+  // A successfully-applied customer promo code overrides — never stacks
+  // with — the auto-applied spend-tier discount, mirroring
+  // checkout-actions.ts's server-side precedence exactly.
+  const discount = promoState.discountPercent
+    ? { title: promoState.title ?? "Promo code", discountPercent: promoState.discountPercent }
+    : tierDiscount;
 
   // Mirrors checkout-actions.ts exactly: discount comes off the subtotal
   // first, then GST is recomputed on what's left — so this always matches
@@ -123,6 +133,32 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
         <div className="text-right text-xs text-[var(--sf-muted)]">Includes ${discountedGst.toFixed(2)} GST</div>
       </div>
 
+      <div className="mt-4">
+        <form action={promoFormAction} className="flex items-center gap-2">
+          <input
+            type="text"
+            name="code"
+            value={promoCodeInput}
+            onChange={(e) => setPromoCodeInput(e.target.value)}
+            placeholder="Have a promo code?"
+            className="h-10 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-3 text-sm uppercase outline-none focus:border-[var(--sf-primary)]"
+          />
+          <button
+            type="submit"
+            disabled={promoPending || !promoCodeInput}
+            className="h-10 shrink-0 rounded-xl bg-[var(--sf-bg-alt)] px-4 text-sm font-semibold text-[var(--sf-fg)] hover:bg-[var(--sf-primary-soft)] disabled:opacity-60"
+          >
+            {promoPending ? "Checking..." : "Apply"}
+          </button>
+        </form>
+        {promoState.error && <p className="mt-1 text-xs text-red-500">{promoState.error}</p>}
+        {promoState.discountPercent != null && (
+          <p className="mt-1 text-xs font-medium text-[var(--sf-primary)]">
+            Promo code applied — {promoState.discountPercent}% off!
+          </p>
+        )}
+      </div>
+
       {!showCheckout ? (
         <button
           type="button"
@@ -143,6 +179,9 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
             name="linesJson"
             value={JSON.stringify(items.map((i) => ({ productId: i.productId, quantity: i.quantity })))}
           />
+          {promoState.discountPercent != null && (
+            <input type="hidden" name="promoCode" value={promoState.title ?? ""} />
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">

@@ -12,6 +12,7 @@ import { gstComponent, applyDiscount } from "@/lib/storefront/gst";
 import { getCustomerSession } from "@/lib/customer-auth";
 import { checkoutSchema, checkoutLineSchema } from "@/modules/storefront/schema";
 import { getBestActiveDiscount } from "@/modules/storefront/queries";
+import { getValidPromoCode } from "@/modules/customers/queries";
 
 // Mirrors the re-pricing/customer-upsert rules in submitOrder() in
 // public-actions.ts — this is a second unauthenticated entry point, so it
@@ -74,12 +75,33 @@ export async function createStripeCheckout(
 
   const rawSubtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
 
-  // Auto-applies the single best active promotion discount (no stacking, no
-  // customer-entered code) — see getBestActiveDiscount(). `subtotal`/`total`
-  // below are POST-discount so every existing Finance report keeps working
-  // unchanged; discountAmount/discountPercent record what happened.
-  const activeDiscount = await getBestActiveDiscount(rawSubtotal);
-  const discountPercent = activeDiscount?.discountPercent ?? null;
+  // Needed before the discount is resolved below (a promo code only redeems
+  // against the account it was issued to), as well as for the existing
+  // customer-linking logic further down.
+  const loggedInCustomer = await getCustomerSession();
+
+  // A customer-entered promo code (see PromoCode/getValidPromoCode()) is
+  // checked first and, if valid, overrides — never stacks with — the
+  // sitewide/spend-tier Promotion discount; only a signed-in customer can
+  // redeem one, and only the specific code issued to their own account.
+  // Falls back to the normal auto-applied best-tier discount otherwise.
+  // `subtotal`/`total` below are POST-discount so every existing Finance
+  // report keeps working unchanged; discountAmount/discountPercent record
+  // what actually happened.
+  let discountPercent: number | null;
+  if (parsed.data.promoCode) {
+    if (!loggedInCustomer) {
+      return { error: "Sign in to your account to use a promo code." };
+    }
+    const promo = await getValidPromoCode(parsed.data.promoCode, loggedInCustomer.id);
+    if (!promo) {
+      return { error: "That promo code isn't valid, has expired, or isn't linked to your account." };
+    }
+    discountPercent = promo.discountPercent;
+  } else {
+    const activeDiscount = await getBestActiveDiscount(rawSubtotal);
+    discountPercent = activeDiscount?.discountPercent ?? null;
+  }
   const discountAmount = discountPercent ? applyDiscount(rawSubtotal, discountPercent) : 0;
   const subtotal = rawSubtotal - discountAmount;
   const gstAmount = gstComponent(subtotal);
@@ -89,7 +111,6 @@ export async function createStripeCheckout(
   // they're logged into, not whatever the checkout form's email happens to
   // match. Guest checkout (no session) keeps the existing email-match
   // behavior unchanged.
-  const loggedInCustomer = await getCustomerSession();
   let customer = loggedInCustomer;
   if (!customer) {
     customer = await db.customer.findFirst({ where: { email: parsed.data.email } });

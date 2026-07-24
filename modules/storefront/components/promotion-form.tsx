@@ -17,6 +17,7 @@ type Promotion = {
   linkUrl: string | null;
   linkLabel: string | null;
   discountPercent: number | null;
+  minimumSpend: unknown;
   startDate: Date | null;
   endDate: Date | null;
   sortOrder: number;
@@ -75,6 +76,25 @@ export function PromotionForm({
         <p className="text-xs text-muted-foreground">
           When set, this percentage is automatically deducted from the customer&apos;s total at checkout while this
           promotion is active — leave blank for a marketing-only banner with no pricing effect.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="minimumSpend">Minimum order amount (optional)</Label>
+        <Input
+          id="minimumSpend"
+          name="minimumSpend"
+          type="number"
+          min={0.01}
+          step="0.01"
+          defaultValue={promotion?.minimumSpend as number | undefined}
+          placeholder="e.g. 50"
+        />
+        <p className="text-xs text-muted-foreground">
+          Only applies the discount once the customer&apos;s subtotal reaches this amount — leave blank to apply at
+          any order size. To offer different discounts at different spend levels (e.g. $50 → 10% off, $100 → 20%
+          off), create a separate promotion for each tier; the highest one the customer&apos;s order qualifies for
+          is used automatically, with no stacking.
         </p>
       </div>
 

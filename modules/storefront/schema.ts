@@ -92,6 +92,17 @@ const optionalPercent = () =>
     )
     .transform((v) => v ?? null);
 
+// Blank clears an existing minimum (same convention as optionalPercent) — the
+// discount above only auto-applies once the cart subtotal reaches this
+// amount; leave blank to apply at any order size.
+const optionalMoney = () =>
+  z
+    .preprocess(
+      (val) => (val === "" || val == null ? undefined : val),
+      z.coerce.number().positive("Minimum order amount must be greater than 0").optional()
+    )
+    .transform((v) => v ?? null);
+
 export const promotionSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   description: optionalText(1000),
@@ -99,6 +110,7 @@ export const promotionSchema = z.object({
   linkUrl: optionalText(500),
   linkLabel: optionalText(50),
   discountPercent: optionalPercent(),
+  minimumSpend: optionalMoney(),
   startDate: optionalDate(),
   endDate: optionalDate(),
   sortOrder: z.coerce.number().int().default(0),

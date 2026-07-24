@@ -7,12 +7,19 @@ import { useCart } from "@/lib/storefront/cart-context";
 import { createStripeCheckout } from "@/modules/storefront/checkout-actions";
 import { gstComponent, applyDiscount } from "@/lib/storefront/gst";
 
-type ActiveDiscount = { title: string; discountPercent: number } | null;
+type DiscountTier = { title: string; discountPercent: number; minimumSpend: number | null };
 
-export function CartView({ discount }: { discount: ActiveDiscount }) {
+export function CartView({ discounts }: { discounts: DiscountTier[] }) {
   const { items, updateQuantity, removeItem, subtotal, gst } = useCart();
   const [state, formAction, pending] = useActionState(createStripeCheckout, {});
   const [showCheckout, setShowCheckout] = useState(false);
+
+  // Picks the highest-percent tier whose minimum spend (if any) the current
+  // subtotal meets — mirrors checkout-actions.ts's server-side selection
+  // (getBestActiveDiscount(rawSubtotal)) exactly, so this preview always
+  // matches what Stripe will actually charge.
+  const discount =
+    discounts.find((d) => d.minimumSpend == null || subtotal >= d.minimumSpend) ?? null;
 
   // Mirrors checkout-actions.ts exactly: discount comes off the subtotal
   // first, then GST is recomputed on what's left — so this always matches

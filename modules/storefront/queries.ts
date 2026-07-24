@@ -83,13 +83,35 @@ export function getActivePromotions() {
 }
 
 // Same active/date-window rule as getActivePromotions(), but scoped to
-// promotions that actually carry a discount and picks the single highest
-// percentage — if two discount promotions are simultaneously active, only
-// the best one applies at checkout (no stacking). Used by checkout-actions.ts
-// and the cart page; unrelated to which promotions are shown as banners.
-export function getBestActiveDiscount() {
+// promotions that actually carry a discount, meet the given subtotal's
+// minimumSpend (if any), and picks the single highest percentage among those
+// — if two qualifying discount promotions are simultaneously active, only
+// the best one applies at checkout (no stacking). Used by checkout-actions.ts,
+// where the real subtotal is already known server-side from actual line
+// items; unrelated to which promotions are shown as banners.
+export function getBestActiveDiscount(subtotal: number) {
   const now = new Date();
   return db.promotion.findFirst({
+    where: {
+      isActive: true,
+      discountPercent: { not: null },
+      OR: [{ minimumSpend: null }, { minimumSpend: { lte: subtotal } }],
+      AND: [
+        { OR: [{ startDate: null }, { startDate: { lte: now } }] },
+        { OR: [{ endDate: null }, { endDate: { gte: now } }] },
+      ],
+    },
+    orderBy: { discountPercent: "desc" },
+  });
+}
+
+// Same active/date-window rule, but returns every currently-active discount
+// tier (not just the one matching a subtotal) since the cart page can't know
+// the real subtotal server-side — cart contents live in client-side state.
+// CartView picks whichever tier the current subtotal actually qualifies for.
+export function getActiveDiscountPromotions() {
+  const now = new Date();
+  return db.promotion.findMany({
     where: {
       isActive: true,
       discountPercent: { not: null },

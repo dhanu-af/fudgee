@@ -78,7 +78,7 @@ export async function createStripeCheckout(
   // customer-entered code) — see getBestActiveDiscount(). `subtotal`/`total`
   // below are POST-discount so every existing Finance report keeps working
   // unchanged; discountAmount/discountPercent record what happened.
-  const activeDiscount = await getBestActiveDiscount();
+  const activeDiscount = await getBestActiveDiscount(rawSubtotal);
   const discountPercent = activeDiscount?.discountPercent ?? null;
   const discountAmount = discountPercent ? applyDiscount(rawSubtotal, discountPercent) : 0;
   const subtotal = rawSubtotal - discountAmount;

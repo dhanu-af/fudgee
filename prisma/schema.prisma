@@ -625,6 +625,12 @@ model Promotion {
   // this promotion is active (see getBestActiveDiscount() in queries.ts) —
   // null keeps a promotion a pure marketing banner with no pricing effect.
   discountPercent Int?
+  // Only applies discountPercent once the cart subtotal reaches this amount;
+  // null means "any order size." Lets several Promotion rows model spend
+  // tiers (e.g. $50 -> 10%, $100 -> 20%) — getBestActiveDiscount() and
+  // getActiveDiscountPromotions() both pick the highest percentage the
+  // current subtotal actually qualifies for, no stacking.
+  minimumSpend    Decimal?  @db.Decimal(14, 4)
   startDate   DateTime?
   endDate     DateTime?
   sortOrder   Int       @default(0)

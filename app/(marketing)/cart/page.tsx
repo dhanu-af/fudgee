@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CartView } from "@/components/storefront/cart-view";
-import { getBestActiveDiscount } from "@/modules/storefront/queries";
+import { getActiveDiscountPromotions } from "@/modules/storefront/queries";
 
 export const metadata: Metadata = {
   title: "Your Cart",
@@ -13,10 +13,14 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
-  const discount = await getBestActiveDiscount();
+  const discounts = await getActiveDiscountPromotions();
   return (
     <CartView
-      discount={discount ? { title: discount.title, discountPercent: discount.discountPercent! } : null}
+      discounts={discounts.map((d) => ({
+        title: d.title,
+        discountPercent: d.discountPercent!,
+        minimumSpend: d.minimumSpend ? Number(d.minimumSpend) : null,
+      }))}
     />
   );
 }

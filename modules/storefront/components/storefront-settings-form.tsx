@@ -25,6 +25,7 @@ type StorefrontSettings = {
   facebookUrl: string | null;
   facebookFanPageUrl: string | null;
   tiktokUrl: string | null;
+  googleReviewUrl: string | null;
   newsletterHeading: string | null;
   newsletterSubheading: string | null;
 } | null;
@@ -148,6 +149,19 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
             placeholder="https://tiktok.com/@yourhandle"
             defaultValue={settings?.tiktokUrl ?? ""}
           />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="googleReviewUrl">Google review link</Label>
+          <Input
+            id="googleReviewUrl"
+            name="googleReviewUrl"
+            placeholder="https://g.page/r/.../review"
+            defaultValue={settings?.googleReviewUrl ?? ""}
+          />
+          <p className="text-xs text-muted-foreground">
+            Powers the &quot;Leave a Google Review&quot; section at the bottom of the homepage. Leave blank to hide
+            it.
+          </p>
         </div>
       </section>
 

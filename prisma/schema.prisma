@@ -681,6 +681,11 @@ model StorefrontSettings {
   facebookUrl          String?
   facebookFanPageUrl   String?
   tiktokUrl            String?
+  // Powers the "Leave a Google Review" section at the bottom of the
+  // homepage (see GoogleReviewSection) — a direct link to the business's
+  // Google review form. Hides itself when blank, same as the other social
+  // links above.
+  googleReviewUrl      String?
   newsletterHeading    String?
   newsletterSubheading String?
   createdAt            DateTime @default(now())

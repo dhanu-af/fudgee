@@ -9,6 +9,7 @@ import { ReviewsSection } from "@/components/storefront/reviews-section";
 import { FaqSection } from "@/components/storefront/faq-section";
 import { AboutSection } from "@/components/storefront/about-section";
 import { ContactSection } from "@/components/storefront/contact-section";
+import { GoogleReviewSection } from "@/components/storefront/google-review-section";
 import { SITE_URL } from "@/lib/site-config";
 
 // Content here is admin-editable via the Storefront CMS, and this page's
@@ -81,6 +82,7 @@ export default async function StorefrontHomePage() {
       />
       <FaqSection items={faqItems} />
       <ContactSection settings={settings} />
+      <GoogleReviewSection url={settings?.googleReviewUrl ?? null} />
     </>
   );
 }

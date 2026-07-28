@@ -140,6 +140,7 @@ export const storefrontSettingsSchema = z.object({
   facebookUrl: optionalUrl(300),
   facebookFanPageUrl: optionalUrl(300),
   tiktokUrl: optionalUrl(300),
+  googleReviewUrl: optionalUrl(300),
   newsletterHeading: optionalText(200),
   newsletterSubheading: optionalText(500),
 });

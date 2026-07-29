@@ -4,13 +4,26 @@ import { ReorderButton } from "@/modules/customer-account/components/reorder-but
 type Orders = Awaited<ReturnType<typeof getCustomerOrderHistory>>;
 
 const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "Draft",
+  DRAFT: "Order received",
   CONFIRMED: "Confirmed",
   PACKED: "Packed",
   DISPATCHED: "Dispatched",
   DELIVERED: "Delivered",
   FULFILLED: "Fulfilled",
   CANCELLED: "Cancelled",
+};
+
+// Color-codes each status so a customer can tell "Confirmed" apart from
+// "Order received" or "Cancelled" at a glance, instead of every status
+// showing the same neutral pill regardless of where the order actually is.
+const STATUS_STYLE: Record<string, string> = {
+  DRAFT: "bg-slate-400/15 text-slate-500",
+  CONFIRMED: "bg-emerald-600/15 text-emerald-600",
+  PACKED: "bg-blue-600/15 text-blue-600",
+  DISPATCHED: "bg-indigo-600/15 text-indigo-600",
+  DELIVERED: "bg-[var(--sf-primary-soft)] text-[var(--sf-primary)]",
+  FULFILLED: "bg-[var(--sf-primary-soft)] text-[var(--sf-primary)]",
+  CANCELLED: "bg-red-600/15 text-red-600",
 };
 
 export function OrderHistory({ orders }: { orders: Orders }) {
@@ -34,7 +47,11 @@ export function OrderHistory({ orders }: { orders: Orders }) {
               <p className="text-xs text-[var(--sf-muted)]">{new Date(order.orderDate).toLocaleDateString()}</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="rounded-full bg-[var(--sf-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--sf-primary)]">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  STATUS_STYLE[order.status] ?? "bg-[var(--sf-primary-soft)] text-[var(--sf-primary)]"
+                }`}
+              >
                 {STATUS_LABEL[order.status] ?? order.status}
               </span>
               <span className="text-sm font-semibold text-[var(--sf-fg)]">

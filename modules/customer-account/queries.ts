@@ -13,3 +13,13 @@ export function getCustomerOrderHistory(customerId: string) {
     },
   });
 }
+
+// Single-order lookup for the customer-facing invoice page — scoped to
+// customerId (not just the order id) so a signed-in customer can never view
+// another customer's invoice by guessing/incrementing the URL.
+export function getCustomerOrderById(customerId: string, orderId: string) {
+  return db.salesOrder.findFirst({
+    where: { id: orderId, customerId },
+    include: { lines: { include: { product: true } } },
+  });
+}

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { getCustomerOrderHistory } from "@/modules/customer-account/queries";
 import { ReorderButton } from "@/modules/customer-account/components/reorder-button";
 
@@ -68,6 +69,15 @@ export function OrderHistory({ orders }: { orders: Orders }) {
               />
             </div>
           </div>
+
+          {order.status === "FULFILLED" && (
+            <Link
+              href={`/account/orders/${order.id}/invoice`}
+              className="mt-2 inline-block text-sm font-semibold text-[var(--sf-primary)] hover:underline"
+            >
+              View / Print Invoice →
+            </Link>
+          )}
 
           <div className="mt-4 flex flex-col divide-y divide-[var(--sf-border)]">
             {order.lines.map((line) => (

@@ -409,6 +409,15 @@ model SalesOrder {
   status                  SalesOrderStatus        @default(DRAFT)
   orderDate               DateTime                @default(now())
   requestedDate           DateTime?
+  // Snapshot of the delivery address entered at checkout for THIS specific
+  // order — null for admin-created orders (which fall back to
+  // customer.shippingAddress). Without this, a returning customer typing a
+  // different delivery address at checkout (gift, new address, etc.) had no
+  // way to have it recorded anywhere: it was used only to backfill the
+  // Customer record when blank, then discarded. Also used as the default
+  // Shipment.deliveryAddress when a shipment is created (see
+  // modules/shipping/actions.ts createShipment).
+  shippingAddress         String?
   notes                   String?
   subtotal                Decimal                 @db.Decimal(14, 4)
   total                   Decimal                 @db.Decimal(14, 4)

@@ -14,9 +14,8 @@ import { checkoutSchema, checkoutLineSchema } from "@/modules/storefront/schema"
 import { getBestActiveDiscount } from "@/modules/storefront/queries";
 import { getValidPromoCode } from "@/modules/customers/queries";
 
-// Mirrors the re-pricing/customer-upsert rules in submitOrder() in
-// public-actions.ts — this is a second unauthenticated entry point, so it
-// re-derives everything from the database the same way and never trusts a
+// An unauthenticated entry point — re-derives everything from the database
+// (prices, stock status, discount eligibility) and never trusts a
 // client-submitted price or product id.
 
 export type StripeCheckoutFormState = { error?: string };
@@ -140,6 +139,14 @@ export async function createStripeCheckout(
   const order = await db.salesOrder.create({
     data: {
       customerId: customer.id,
+      // Snapshot of what was actually typed at checkout for THIS order —
+      // separate from Customer.shippingAddress, which only gets backfilled
+      // above when blank. A returning customer entering a different
+      // delivery address (gift, new address, etc.) needs it recorded on the
+      // order itself, not silently discarded in favor of their old address
+      // on file. Also used as the default Shipment.deliveryAddress (see
+      // modules/shipping/actions.ts createShipment).
+      shippingAddress: parsed.data.shippingAddress,
       notes: notesParts.join(" "),
       subtotal,
       total: subtotal,

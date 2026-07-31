@@ -223,6 +223,14 @@ export async function recordInvoicePayment(
   });
   if (!invoice) return { error: "Invoice not found." };
 
+  const alreadyPaid = sumPayments(invoice.payments);
+  const remaining = Number(invoice.totalAmount) - alreadyPaid;
+  if (parsed.data.amount > remaining) {
+    return {
+      error: `Payment of ${parsed.data.amount.toFixed(2)} exceeds the ${remaining.toFixed(2)} still owing on this invoice.`,
+    };
+  }
+
   await db.invoicePayment.create({
     data: {
       invoiceId,
@@ -237,7 +245,7 @@ export async function recordInvoicePayment(
   // Only a full payment can flip the linked Sales Orders to PAID — a partial
   // payment on an invoice bundling several orders can't be attributed to any
   // one of them.
-  const paidTotal = sumPayments(invoice.payments) + parsed.data.amount;
+  const paidTotal = alreadyPaid + parsed.data.amount;
   if (paidTotal >= Number(invoice.totalAmount) && invoice.salesOrders.length > 0) {
     await db.salesOrder.updateMany({
       where: { id: { in: invoice.salesOrders.map((link) => link.salesOrderId) }, paymentStatus: { not: "PAID" } },

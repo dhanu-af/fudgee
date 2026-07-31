@@ -29,8 +29,8 @@ export default function CookiePolicyPage() {
         <section>
           <h2 className="font-display text-lg font-semibold text-[var(--sf-fg)]">Sign-in</h2>
           <p className="mt-2">
-            If you sign in as staff, a session cookie keeps you logged in
-            while you use the site.
+            If you sign in to your Fudgee account, or as staff, a session
+            cookie keeps you logged in while you use the site.
           </p>
         </section>
       </div>

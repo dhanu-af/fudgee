@@ -35,10 +35,34 @@ export const customerSchema = z.object({
     .optional()
     .or(z.literal(""))
     .transform((v) => (v === "" ? undefined : v)),
-  email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().max(40).optional().or(z.literal("")),
-  billingAddress: z.string().max(500).optional().or(z.literal("")),
-  shippingAddress: z.string().max(500).optional().or(z.literal("")),
+  // Blank resolves to explicit null (not undefined/""), matching the
+  // optionalText() convention used everywhere else in the app — Prisma's
+  // update() treats undefined as "leave alone," and a bare "" would be a
+  // third, inconsistent representation of "no value" alongside null.
+  email: z
+    .string()
+    .email()
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v === "" || v === undefined ? null : v)),
+  phone: z
+    .string()
+    .max(40)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v === "" || v === undefined ? null : v)),
+  billingAddress: z
+    .string()
+    .max(500)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v === "" || v === undefined ? null : v)),
+  shippingAddress: z
+    .string()
+    .max(500)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v === "" || v === undefined ? null : v)),
 });
 
 export type CustomerInput = z.infer<typeof customerSchema>;

@@ -70,7 +70,12 @@ export function OrderHistory({ orders }: { orders: Orders }) {
             </div>
           </div>
 
-          {order.status === "FULFILLED" && (
+          {/* Two separate "order is done" paths exist: the manual "Mark as
+              Fulfilled" shortcut (DRAFT/CONFIRMED -> FULFILLED) and the
+              tracked Shipping flow, which cascades to DELIVERED instead
+              (see TRACKING_STATUS_CASCADE in modules/shipping/actions.ts) —
+              the invoice needs to appear for either. */}
+          {(order.status === "FULFILLED" || order.status === "DELIVERED") && (
             <Link
               href={`/account/orders/${order.id}/invoice`}
               className="mt-2 inline-block text-sm font-semibold text-[var(--sf-primary)] hover:underline"

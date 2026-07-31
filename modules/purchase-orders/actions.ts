@@ -72,6 +72,12 @@ export async function markPurchaseOrderReceived(
 
   const po = await db.purchaseOrder.findUnique({ where: { id }, include: { lines: true } });
   if (!po) return { error: "Purchase order not found." };
+  // Without this, a double-click (or a resubmitted request after the page
+  // hasn't yet refreshed to hide the button) would receipt the same PO's
+  // stock twice — mirrors the status check createShipment already does.
+  if (po.status !== "DRAFT" && po.status !== "SENT") {
+    return { error: "This purchase order has already been received or cancelled." };
+  }
 
   const location = await db.location.findFirst({ where: { isActive: true } });
   if (!location) {

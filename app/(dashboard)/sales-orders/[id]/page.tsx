@@ -30,6 +30,11 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
         <div>
           <h1 className="text-xl font-semibold">{`SO-${String(so.seq).padStart(4, "0")}`}</h1>
           <p className="text-sm text-muted-foreground">{so.customer.name}</p>
+          {(so.shippingAddress || so.customer.shippingAddress) && (
+            <p className="text-xs text-muted-foreground">
+              Ship to: {so.shippingAddress || so.customer.shippingAddress}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <Badge>{so.status}</Badge>

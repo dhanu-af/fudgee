@@ -79,6 +79,12 @@ export async function completeProductionBatch(
 
   const batch = await db.productionBatch.findUnique({ where: { id }, include: { inputs: true } });
   if (!batch) return { error: "Production batch not found." };
+  // Without this, a double-click (or a resubmitted request before the page
+  // refreshes to hide the button) would issue raw materials and receipt
+  // finished goods a second time for the same batch.
+  if (batch.status !== "PLANNED" && batch.status !== "IN_PROGRESS") {
+    return { error: "This batch has already been completed or cancelled." };
+  }
 
   const location = await db.location.findFirst({ where: { isActive: true } });
   if (!location) {

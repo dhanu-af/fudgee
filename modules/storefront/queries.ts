@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from "@/lib/db";
 
 // --- Admin CRUD reads ---
@@ -53,9 +54,12 @@ export function getPromotionById(id: string) {
   return db.promotion.findUnique({ where: { id } });
 }
 
-export function getStorefrontSettings() {
+// Cached per-request (React cache()) since both the (marketing) layout and
+// getStorefrontHomepageData below need the same singleton row — without
+// this, a homepage visit fetched it twice.
+export const getStorefrontSettings = cache(() => {
   return db.storefrontSettings.findFirst();
-}
+});
 
 export function getContactMessages() {
   return db.contactMessage.findMany({ orderBy: { createdAt: "desc" } });
@@ -132,7 +136,7 @@ export function getActiveDiscountPromotions() {
 export async function getStorefrontHomepageData() {
   const [settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems] =
     await Promise.all([
-      db.storefrontSettings.findFirst(),
+      getStorefrontSettings(),
       getActivePromotions(),
       db.category.findMany({
         where: { isActive: true },
@@ -179,8 +183,10 @@ export function getShopProducts() {
 
 // Public product detail page: the product plus its gallery photos and
 // approved (isActive) reviews, with a 1-5 star count breakdown for the
-// rating summary bar chart.
-export async function getPublicProductDetail(id: string) {
+// rating summary bar chart. Wrapped in React's cache() since the page calls
+// this once for generateMetadata and again for the page body — cache()
+// dedupes the two into a single query per request instead of two.
+export const getPublicProductDetail = cache(async (id: string) => {
   const product = await db.product.findFirst({
     where: { id, status: "ACTIVE", type: "FINISHED_GOOD" },
     include: {
@@ -200,4 +206,4 @@ export async function getPublicProductDetail(id: string) {
     reviewCount > 0 ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount : null;
 
   return { product, breakdown, reviewCount, averageRating };
-}
+});

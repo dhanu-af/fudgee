@@ -42,7 +42,12 @@ export async function createShipment(
   const shipment = await db.shipment.create({
     data: {
       salesOrderId: so.id,
-      deliveryAddress: so.customer.shippingAddress,
+      // The order's own delivery address (set at storefront checkout) takes
+      // priority over the customer's on-file address — a returning customer
+      // may have entered a different address for this specific order.
+      // Admin-created orders have no shippingAddress, so fall back to the
+      // customer record as before.
+      deliveryAddress: so.shippingAddress ?? so.customer.shippingAddress,
       items: { create: so.lines.map((line) => ({ salesOrderLineId: line.id, quantity: line.quantity })) },
     },
   });
@@ -100,6 +105,12 @@ export async function dispatchShipment(
     include: { items: { include: { salesOrderLine: true } } },
   });
   if (!shipment) return { error: "Shipment not found." };
+  // Without this, a double-click (or a resubmitted request before the page
+  // refreshes) would deduct the same shipment's stock twice and re-flip the
+  // linked sales order's status.
+  if (shipment.status !== "READY_TO_DISPATCH") {
+    return { error: "This shipment isn't ready to dispatch (already dispatched, or not packed yet)." };
+  }
 
   const location = await db.location.findFirst({ where: { isActive: true } });
   if (!location) return { error: "Create a warehouse location before dispatching shipments." };

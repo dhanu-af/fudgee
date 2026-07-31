@@ -67,7 +67,7 @@ export default async function CustomerInvoicePage({ params }: { params: Promise<
             <div className="mt-2 flex flex-col gap-0.5">
               <p className="font-medium">{customer.name}</p>
               <p className="whitespace-pre-line text-neutral-500">
-                {customer.shippingAddress || customer.billingAddress || "—"}
+                {order.shippingAddress || customer.shippingAddress || customer.billingAddress || "—"}
               </p>
             </div>
           </div>
@@ -78,7 +78,7 @@ export default async function CustomerInvoicePage({ params }: { params: Promise<
             <tr className="bg-[var(--sf-primary)] text-[var(--sf-primary-foreground)]">
               <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Qty</th>
               <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Description</th>
-              <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Unit Cost</th>
+              <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Unit Price</th>
               <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide">Total</th>
             </tr>
           </thead>

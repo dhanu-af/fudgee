@@ -64,7 +64,7 @@ export default async function SalesOrderInvoicePage({ params }: { params: Promis
             <div className="mt-2 flex flex-col gap-0.5">
               <p className="font-medium">{order.customer.name}</p>
               <p className="whitespace-pre-line text-muted-foreground">
-                {order.customer.shippingAddress || order.customer.billingAddress || "—"}
+                {order.shippingAddress || order.customer.shippingAddress || order.customer.billingAddress || "—"}
               </p>
             </div>
           </div>
@@ -75,7 +75,7 @@ export default async function SalesOrderInvoicePage({ params }: { params: Promis
             <tr className="bg-primary text-primary-foreground">
               <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Qty</th>
               <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Description</th>
-              <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Unit Cost</th>
+              <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">Unit Price</th>
               <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide">Total</th>
             </tr>
           </thead>

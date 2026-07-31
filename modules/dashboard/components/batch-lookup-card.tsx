@@ -1,9 +1,15 @@
+"use client";
+
+import { useActionState } from "react";
 import { Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { lookupProductionBatch } from "@/modules/dashboard/actions";
 
 export function BatchLookupCard() {
+  const [state, formAction, pending] = useActionState(lookupProductionBatch, {});
+
   return (
     <Card className="border-border/60">
       <CardHeader>
@@ -13,15 +19,13 @@ export function BatchLookupCard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-2">
-          <Input placeholder="Enter a batch number..." disabled />
-          <Button type="button" disabled>
-            Search
+        <form action={formAction} className="flex gap-2">
+          <Input name="batchNumber" placeholder="Enter a batch number..." />
+          <Button type="submit" disabled={pending}>
+            {pending ? "Searching..." : "Search"}
           </Button>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Available once Production &amp; Batch Tracking ships (M5).
-        </p>
+        </form>
+        {state.error && <p className="mt-2 text-xs text-destructive">{state.error}</p>}
       </CardContent>
     </Card>
   );

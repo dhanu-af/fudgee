@@ -1,4 +1,6 @@
+import Image from "next/image";
 import { Reveal } from "@/components/storefront/reveal";
+import { isOptimizableImageUrl } from "@/lib/utils";
 
 type Props = {
   heading: string | null;
@@ -12,8 +14,15 @@ export function AboutSection({ heading, body, imageUrl }: Props) {
       <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
         <Reveal className="relative aspect-[4/3] overflow-hidden rounded-[2.5rem] ring-1 ring-[var(--sf-border)]">
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="" className="size-full object-cover" />
+            <Image
+              src={imageUrl}
+              alt=""
+              fill
+              loading="lazy"
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+              unoptimized={!isOptimizableImageUrl(imageUrl)}
+            />
           ) : (
             <div className="flex size-full items-center justify-center bg-gradient-to-br from-[var(--sf-accent-soft)] to-[var(--sf-primary-soft)]">
               <span className="font-display text-5xl font-semibold text-[var(--sf-primary)]">fudgee.</span>

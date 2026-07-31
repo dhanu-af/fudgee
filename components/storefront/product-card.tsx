@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ShoppingBag, Check } from "lucide-react";
 import { useCart } from "@/lib/storefront/cart-context";
+import { isOptimizableImageUrl } from "@/lib/utils";
 
 export type StorefrontProduct = {
   id: string;
@@ -35,11 +37,14 @@ export function ProductCard({ product, index = 0 }: { product: StorefrontProduct
     <div className="group flex flex-col overflow-hidden rounded-3xl bg-[var(--sf-card)] ring-1 ring-[var(--sf-border)] transition-shadow hover:shadow-lg hover:shadow-[var(--sf-primary)]/10">
       <Link href={`/shop/${product.id}`} className="relative block aspect-square overflow-hidden">
         {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={product.imageUrl}
             alt={product.name}
-            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+            fill
+            loading="lazy"
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            unoptimized={!isOptimizableImageUrl(product.imageUrl)}
           />
         ) : (
           <div

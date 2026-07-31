@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
+import { isOptimizableImageUrl } from "@/lib/utils";
 
 type Props = {
   heading: string | null;
@@ -55,8 +57,15 @@ export function HeroSection({ heading, subheading, imageUrl }: Props) {
           className="relative aspect-square w-full max-w-md justify-self-center overflow-hidden rounded-[2.5rem] ring-1 ring-[var(--sf-border)] lg:justify-self-end"
         >
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="Fudgee handcrafted fudge" className="size-full object-cover" />
+            <Image
+              src={imageUrl}
+              alt="Fudgee handcrafted fudge"
+              fill
+              priority
+              sizes="(min-width: 1024px) 448px, 90vw"
+              className="object-cover"
+              unoptimized={!isOptimizableImageUrl(imageUrl)}
+            />
           ) : (
             <div className="flex size-full items-center justify-center bg-gradient-to-br from-[var(--sf-primary-soft)] via-[var(--sf-card)] to-[var(--sf-accent-soft)]">
               <span className="font-display text-6xl font-semibold text-[var(--sf-primary)]">fudgee.</span>

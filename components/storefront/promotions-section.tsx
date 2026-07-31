@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { isOptimizableImageUrl } from "@/lib/utils";
 
 type Promotion = {
   id: string;
@@ -20,8 +22,15 @@ export function PromotionsSection({ promotions }: { promotions: Promotion[] }) {
           className="relative overflow-hidden rounded-3xl ring-1 ring-[var(--sf-border)]"
         >
           {promo.imageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={promo.imageUrl} alt="" className="absolute inset-0 size-full object-cover" />
+            <Image
+              src={promo.imageUrl}
+              alt=""
+              fill
+              loading="lazy"
+              sizes="100vw"
+              className="object-cover"
+              unoptimized={!isOptimizableImageUrl(promo.imageUrl)}
+            />
           )}
           <div
             className={

@@ -3,10 +3,12 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
+import Image from "next/image";
 import { useCart } from "@/lib/storefront/cart-context";
 import { createStripeCheckout } from "@/modules/storefront/checkout-actions";
 import { applyPromoCode } from "@/modules/customers/actions";
 import { gstComponent, applyDiscount } from "@/lib/storefront/gst";
+import { isOptimizableImageUrl } from "@/lib/utils";
 
 type DiscountTier = { title: string; discountPercent: number; minimumSpend: number | null };
 
@@ -63,10 +65,17 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
             key={item.productId}
             className="flex items-center gap-4 rounded-2xl bg-[var(--sf-card)] p-4 ring-1 ring-[var(--sf-border)]"
           >
-            <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[var(--sf-primary-soft)]">
+            <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[var(--sf-primary-soft)]">
               {item.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.imageUrl} alt="" className="size-full object-cover" />
+                <Image
+                  src={item.imageUrl}
+                  alt=""
+                  fill
+                  loading="lazy"
+                  sizes="64px"
+                  className="object-cover"
+                  unoptimized={!isOptimizableImageUrl(item.imageUrl)}
+                />
               ) : (
                 <span className="font-display text-xl font-semibold text-[var(--sf-primary)]">
                   {item.name.charAt(0)}

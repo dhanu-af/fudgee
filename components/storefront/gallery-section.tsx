@@ -1,4 +1,6 @@
+import Image from "next/image";
 import { Reveal } from "@/components/storefront/reveal";
+import { isOptimizableImageUrl } from "@/lib/utils";
 
 type GalleryItem = { id: string; imageUrl: string; caption: string | null };
 
@@ -23,11 +25,14 @@ export function GallerySection({ items }: { items: GalleryItem[] }) {
               className={i % 5 === 0 ? "col-span-2 row-span-2" : ""}
             >
               <figure className="group relative aspect-square overflow-hidden rounded-2xl ring-1 ring-[var(--sf-border)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={item.imageUrl}
                   alt={item.caption || "Fudgee handcrafted fudge and confections"}
-                  className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  fill
+                  loading="lazy"
+                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  unoptimized={!isOptimizableImageUrl(item.imageUrl)}
                 />
                 {item.caption && (
                   <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">

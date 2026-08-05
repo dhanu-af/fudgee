@@ -19,6 +19,14 @@ export function getGalleryItemById(id: string) {
   return db.galleryItem.findUnique({ where: { id } });
 }
 
+export function getHeroImages() {
+  return db.heroImage.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] });
+}
+
+export function getHeroImageById(id: string) {
+  return db.heroImage.findUnique({ where: { id } });
+}
+
 export function getReviews() {
   return db.review.findMany({
     include: { product: { select: { name: true } } },
@@ -134,7 +142,7 @@ export function getActiveDiscountPromotions() {
 // public site.
 
 export async function getStorefrontHomepageData() {
-  const [settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems] =
+  const [settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems] =
     await Promise.all([
       getStorefrontSettings(),
       getActivePromotions(),
@@ -159,6 +167,7 @@ export async function getStorefrontHomepageData() {
         include: { category: true },
       }),
       db.galleryItem.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
+      db.heroImage.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
       db.review.findMany({
         // Product-linked reviews live on their own product page instead —
         // keeps the homepage testimonials to general, site-wide reviews.
@@ -168,7 +177,7 @@ export async function getStorefrontHomepageData() {
       db.faqItem.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
     ]);
 
-  return { settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems };
+  return { settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems };
 }
 
 // Every purchasable product (for the shop/cart), grouped implicitly by

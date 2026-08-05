@@ -9,6 +9,7 @@ import { notifyAdmins, type AdminNotifyResult } from "@/lib/whatsapp";
 import {
   categorySchema,
   galleryItemSchema,
+  heroImageSchema,
   reviewSchema,
   faqItemSchema,
   promotionSchema,
@@ -136,6 +137,57 @@ export async function deleteGalleryItem(
 
   revalidatePath("/storefront/gallery");
   redirect("/storefront/gallery");
+}
+
+// --- Hero Images ---
+
+export async function createHeroImage(_prev: StorefrontFormState, formData: FormData): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = heroImageSchema.safeParse({
+    imageUrl: formData.get("imageUrl"),
+    sortOrder: formData.get("sortOrder"),
+    isActive: formData.get("isActive") === "on",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.heroImage.create({ data: parsed.data });
+
+  revalidatePath("/storefront/hero-images");
+  redirect("/storefront/hero-images");
+}
+
+export async function updateHeroImage(
+  id: string,
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = heroImageSchema.safeParse({
+    imageUrl: formData.get("imageUrl"),
+    sortOrder: formData.get("sortOrder"),
+    isActive: formData.get("isActive") === "on",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.heroImage.update({ where: { id }, data: parsed.data });
+
+  revalidatePath("/storefront/hero-images");
+  redirect("/storefront/hero-images");
+}
+
+export async function deleteHeroImage(
+  id: string,
+  _prev: StorefrontFormState,
+  _formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
+
+  await db.heroImage.delete({ where: { id } }).catch(() => null);
+
+  revalidatePath("/storefront/hero-images");
+  redirect("/storefront/hero-images");
 }
 
 // --- Reviews ---

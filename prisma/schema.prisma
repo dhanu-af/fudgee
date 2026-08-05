@@ -611,6 +611,21 @@ model GalleryItem {
   updatedAt DateTime @updatedAt
 }
 
+// Multiple photos for the homepage hero banner — HeroSection auto-rotates
+// through every active one (see components/storefront/hero-section.tsx).
+// Separate from GalleryItem (the "A little taste of what we make" grid
+// further down the homepage) since these serve a different spot with
+// different sizing. StorefrontSettings.heroImageUrl is kept as a fallback
+// single image for as long as no HeroImage rows exist yet.
+model HeroImage {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Review {
   id           String   @id @default(cuid())
   customerName String

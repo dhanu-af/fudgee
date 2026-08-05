@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StorefrontHomePage() {
-  const { settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, reviews, faqItems } =
+  const { settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems } =
     await getStorefrontHomepageData();
 
   const shopableCategories = categories.map((c) => ({
@@ -56,6 +56,7 @@ export default async function StorefrontHomePage() {
         heading={settings?.heroHeading ?? null}
         subheading={settings?.heroSubheading ?? null}
         imageUrl={settings?.heroImageUrl ?? null}
+        images={heroImages}
       />
       <PromotionsSection promotions={promotions} />
       <CategoriesSection categories={shopableCategories} />

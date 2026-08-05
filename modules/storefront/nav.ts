@@ -4,6 +4,7 @@ export const STOREFRONT_TABS = [
   { label: "Promotions", href: "/storefront/promotions" },
   { label: "Categories", href: "/storefront/categories" },
   { label: "Gallery", href: "/storefront/gallery" },
+  { label: "Hero Images", href: "/storefront/hero-images" },
   { label: "Reviews", href: "/storefront/reviews" },
   { label: "FAQ", href: "/storefront/faq" },
   { label: "Messages", href: "/storefront/messages" },

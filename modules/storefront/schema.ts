@@ -54,6 +54,13 @@ export const galleryItemSchema = z.object({
 });
 export type GalleryItemInput = z.infer<typeof galleryItemSchema>;
 
+export const heroImageSchema = z.object({
+  imageUrl: z.string().min(1, "Image URL is required").max(2000),
+  sortOrder: z.coerce.number().int().default(0),
+  isActive: z.coerce.boolean(),
+});
+export type HeroImageInput = z.infer<typeof heroImageSchema>;
+
 export const reviewSchema = z.object({
   customerName: z.string().min(1, "Customer name is required").max(200),
   rating: z.coerce.number().int().min(1).max(5),

@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { ShoppingBag, Menu, X } from "lucide-react";
 import { useCart } from "@/lib/storefront/cart-context";
 import { SignOutButton } from "@/modules/customer-account/components/sign-out-button";
+import logo from "@/public/logo.png";
 
 const NAV_LINKS = [
   { label: "Shop", href: "/shop" },
@@ -21,8 +23,8 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--sf-border)] bg-[var(--sf-bg)]/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
-        <Link href="/" className="font-display text-3xl font-semibold tracking-tight text-[var(--sf-primary)] sm:text-4xl">
-          fudgee.
+        <Link href="/" className="flex items-center">
+          <Image src={logo} alt="fudgee." priority className="h-9 w-auto sm:h-11" />
         </Link>
 
         <nav className="hidden items-center gap-7 md:flex">

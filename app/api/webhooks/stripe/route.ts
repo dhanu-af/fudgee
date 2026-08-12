@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
 import { notifyAdmins } from "@/lib/whatsapp";
+import { notifyAdminsByEmail, orderNotificationEmailHtml } from "@/lib/email";
 import { ADMIN_URL } from "@/lib/site-config";
 
 // This is the only place a storefront order is ever marked PAID — the
@@ -91,6 +92,25 @@ export async function POST(request: Request) {
           } catch (err) {
             console.error("Failed to send order notification via WhatsApp", err);
           }
+        }
+
+        try {
+          const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
+          const emailResults = await notifyAdminsByEmail(
+            `Order paid: ${orderNumber} — $${Number(order.total).toFixed(2)} AUD`,
+            orderNotificationEmailHtml({
+              orderNumber,
+              customerName: order.customer.name,
+              total: Number(order.total),
+              orderUrl: `${ADMIN_URL}/sales-orders/${order.id}`,
+              paid: true,
+            })
+          );
+          for (const r of emailResults) {
+            if (!r.sent) console.error("Order-paid email not sent to", r.to, ":", r.error);
+          }
+        } catch (err) {
+          console.error("Failed to send order-paid email", err);
         }
 
         revalidatePath("/sales-orders");

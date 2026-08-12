@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
 import { notifyAdmins } from "@/lib/whatsapp";
+import { notifyAdminsByEmail, orderNotificationEmailHtml } from "@/lib/email";
 import { ADMIN_URL } from "@/lib/site-config";
 import { gstComponent, applyDiscount } from "@/lib/storefront/gst";
 import { getCustomerSession } from "@/lib/customer-auth";
@@ -184,6 +185,25 @@ export async function createStripeCheckout(
     } catch (err) {
       console.error("Failed to send order-placed WhatsApp notification", err);
     }
+  }
+
+  try {
+    const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
+    const emailResults = await notifyAdminsByEmail(
+      `New order ${orderNumber} — $${Number(order.total).toFixed(2)} AUD`,
+      orderNotificationEmailHtml({
+        orderNumber,
+        customerName: customer.name,
+        total: Number(order.total),
+        orderUrl: `${ADMIN_URL}/sales-orders/${order.id}`,
+        paid: false,
+      })
+    );
+    for (const r of emailResults) {
+      if (!r.sent) console.error("Order-placed email not sent to", r.to, ":", r.error);
+    }
+  } catch (err) {
+    console.error("Failed to send order-placed email", err);
   }
 
   const headerList = await headers();

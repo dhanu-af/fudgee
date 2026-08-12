@@ -712,8 +712,25 @@ model StorefrontSettings {
   googleReviewUrl      String?
   newsletterHeading    String?
   newsletterSubheading String?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+
+  // --- Legal business details — shown on /refunds, /shipping, /complaints,
+  // and available for /terms, /privacy to reference. Distinct from the
+  // "Fudgee" trading name (that's the hardcoded SITE_NAME constant).
+  legalBusinessName String?
+  abn               String?
+
+  // --- Shipping & delivery — free text so Dhanu can update these without a
+  // code change; checkout currently charges no shipping fee at all, so
+  // these are informational/policy text, not wired into any calculation.
+  deliveryAreas         String?
+  deliveryFee           String?
+  freeDeliveryThreshold String?
+  dispatchTime          String?
+  estimatedDeliveryTime String?
+  courierName           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ContactMessage {

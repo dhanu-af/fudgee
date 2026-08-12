@@ -139,6 +139,9 @@ export function StorefrontFooter({ settings }: { settings: StorefrontSettings })
               <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
               <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
               <li><Link href="/cookies" className="hover:text-white">Cookie Policy</Link></li>
+              <li><Link href="/refunds" className="hover:text-white">Refund &amp; Returns</Link></li>
+              <li><Link href="/shipping-policy" className="hover:text-white">Shipping &amp; Delivery</Link></li>
+              <li><Link href="/complaints" className="hover:text-white">Complaints</Link></li>
             </ul>
           </div>
         </div>

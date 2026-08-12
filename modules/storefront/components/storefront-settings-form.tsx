@@ -28,6 +28,14 @@ type StorefrontSettings = {
   googleReviewUrl: string | null;
   newsletterHeading: string | null;
   newsletterSubheading: string | null;
+  legalBusinessName: string | null;
+  abn: string | null;
+  deliveryAreas: string | null;
+  deliveryFee: string | null;
+  freeDeliveryThreshold: string | null;
+  dispatchTime: string | null;
+  estimatedDeliveryTime: string | null;
+  courierName: string | null;
 } | null;
 
 export function StorefrontSettingsForm({ settings }: { settings: StorefrontSettings }) {
@@ -59,6 +67,83 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
           <Textarea id="aboutBody" name="aboutBody" rows={5} defaultValue={settings?.aboutBody ?? ""} />
         </div>
         <ImageUploadField name="aboutImageUrl" label="About image" defaultValue={settings?.aboutImageUrl} />
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold tracking-tight">Business details</h2>
+        <p className="text-xs text-muted-foreground">
+          Shown on the Refunds &amp; Returns, Shipping &amp; Delivery, and Complaints pages.
+        </p>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="legalBusinessName">Legal business name</Label>
+          <Input
+            id="legalBusinessName"
+            name="legalBusinessName"
+            placeholder="e.g. Fudgee Pty Ltd, or your own full name if a sole trader"
+            defaultValue={settings?.legalBusinessName ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="abn">ABN</Label>
+          <Input id="abn" name="abn" placeholder="XX XXX XXX XXX" defaultValue={settings?.abn ?? ""} />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold tracking-tight">Shipping &amp; delivery</h2>
+        <p className="text-xs text-muted-foreground">
+          Free text shown on the Shipping &amp; Delivery page — checkout doesn&apos;t currently charge a delivery
+          fee, so these are informational only. Leave any field blank to omit that line from the page.
+        </p>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="deliveryAreas">Delivery areas</Label>
+          <Textarea
+            id="deliveryAreas"
+            name="deliveryAreas"
+            placeholder="e.g. Gold Coast and surrounding suburbs; Australia-wide by post"
+            defaultValue={settings?.deliveryAreas ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="deliveryFee">Delivery fee</Label>
+          <Input id="deliveryFee" name="deliveryFee" placeholder="e.g. $9.95 flat rate" defaultValue={settings?.deliveryFee ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="freeDeliveryThreshold">Free-delivery condition</Label>
+          <Input
+            id="freeDeliveryThreshold"
+            name="freeDeliveryThreshold"
+            placeholder="e.g. Free delivery on orders over $50"
+            defaultValue={settings?.freeDeliveryThreshold ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="dispatchTime">Dispatch time</Label>
+          <Input
+            id="dispatchTime"
+            name="dispatchTime"
+            placeholder="e.g. Orders dispatch within 1–2 business days"
+            defaultValue={settings?.dispatchTime ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="estimatedDeliveryTime">Estimated delivery time</Label>
+          <Input
+            id="estimatedDeliveryTime"
+            name="estimatedDeliveryTime"
+            placeholder="e.g. 2–5 business days after dispatch"
+            defaultValue={settings?.estimatedDeliveryTime ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="courierName">Courier</Label>
+          <Input
+            id="courierName"
+            name="courierName"
+            placeholder="e.g. Australia Post"
+            defaultValue={settings?.courierName ?? ""}
+          />
+        </div>
       </section>
 
       <section className="flex flex-col gap-4">

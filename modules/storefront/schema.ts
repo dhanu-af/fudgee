@@ -150,6 +150,14 @@ export const storefrontSettingsSchema = z.object({
   googleReviewUrl: optionalUrl(300),
   newsletterHeading: optionalText(200),
   newsletterSubheading: optionalText(500),
+  legalBusinessName: optionalText(200),
+  abn: optionalText(20),
+  deliveryAreas: optionalText(500),
+  deliveryFee: optionalText(200),
+  freeDeliveryThreshold: optionalText(200),
+  dispatchTime: optionalText(200),
+  estimatedDeliveryTime: optionalText(200),
+  courierName: optionalText(200),
 });
 export type StorefrontSettingsInput = z.infer<typeof storefrontSettingsSchema>;
 

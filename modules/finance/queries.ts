@@ -357,17 +357,49 @@ export async function getGstSummary() {
 
 // --- Dashboard ---
 
+// Revenue by calendar day, for the day-wise chart on the Finance dashboard.
+// Revenue-only (not full P&L) since that's a single grouped sum rather than
+// running the heavier getProfitAndLoss() once per day in the range.
+export async function getDailyRevenue(from: Date, to: Date) {
+  const orders = await db.salesOrder.findMany({
+    where: { status: { in: [...REVENUE_RECOGNIZED_STATUSES] }, orderDate: { gte: from, lte: to } },
+    select: { orderDate: true, subtotal: true },
+  });
+
+  const days: { date: string; label: string; revenue: number }[] = [];
+  const dayIndex = new Map<string, number>();
+  const cursor = new Date(from);
+  cursor.setHours(0, 0, 0, 0);
+  const end = new Date(to);
+  end.setHours(0, 0, 0, 0);
+  while (cursor <= end) {
+    const key = cursor.toISOString().slice(0, 10);
+    dayIndex.set(key, days.length);
+    days.push({ date: key, label: cursor.toLocaleDateString(undefined, { month: "short", day: "numeric" }), revenue: 0 });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  for (const order of orders) {
+    const key = order.orderDate.toISOString().slice(0, 10);
+    const i = dayIndex.get(key);
+    if (i !== undefined) days[i].revenue += Number(order.subtotal);
+  }
+
+  return days;
+}
+
 export async function getFinanceDashboardData() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const yearStart = new Date(now.getFullYear(), 0, 1);
 
-  const [mtd, ytd, arAging, depreciationThisMonth, hasNullCostRecent] = await Promise.all([
+  const [mtd, ytd, arAging, depreciationThisMonth, hasNullCostRecent, dailyRevenue] = await Promise.all([
     getProfitAndLoss(monthStart, now),
     getProfitAndLoss(yearStart, now),
     getArAging(),
     getDepreciationTotal(monthStart, now),
     hasAnyNullCostLine(monthStart, now),
+    getDailyRevenue(monthStart, now),
   ]);
 
   return {
@@ -379,5 +411,6 @@ export async function getFinanceDashboardData() {
     outstandingInvoiceCount: arAging.outstandingInvoiceCount,
     depreciationThisMonth,
     hasNullCostRecent,
+    dailyRevenue,
   };
 }

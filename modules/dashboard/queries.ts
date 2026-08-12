@@ -14,6 +14,11 @@ const BUILT_MODULE_KEYS = new Set([
   "purchase_orders",
   "production",
   "quality",
+  "shipping",
+  "reports",
+  "finance",
+  "storefront",
+  "settings",
 ]);
 
 export async function getDashboardData() {

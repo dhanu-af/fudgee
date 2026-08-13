@@ -21,18 +21,18 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-[var(--sf-primary)]/95 backdrop-blur-md">
+    <header className="sticky top-0 z-50 bg-gradient-to-r from-[#663e9e] via-[var(--sf-primary)] to-[#7d5cb8] shadow-lg shadow-black/10 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
         <Link href="/" className="flex items-center">
-          <Image src={logo} alt="fudgee." priority className="h-9 w-auto sm:h-11" />
+          <Image src={logo} alt="fudgee." priority className="h-9 w-auto drop-shadow-sm sm:h-11" />
         </Link>
 
-        <nav className="hidden items-center gap-7 md:flex">
+        <nav className="hidden items-center gap-1 md:flex">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-white/85 transition-colors hover:text-white"
+              className="rounded-full px-4 py-2 text-sm font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
             >
               {link.label}
             </Link>
@@ -47,7 +47,7 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
           >
             <ShoppingBag className="size-5" />
             {count > 0 && (
-              <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[var(--sf-accent)] text-[10px] font-bold text-[var(--sf-accent-foreground)]">
+              <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[var(--sf-accent)] text-[10px] font-bold text-[var(--sf-accent-foreground)] shadow-sm">
                 {count > 9 ? "9+" : count}
               </span>
             )}
@@ -65,7 +65,7 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
           ) : (
             <Link
               href="/account/login"
-              className="hidden rounded-full bg-[var(--sf-bg)] px-4 py-2 text-sm font-semibold text-[var(--sf-primary)] shadow-sm transition-transform hover:scale-105 sm:inline-block"
+              className="hidden rounded-full bg-[var(--sf-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--sf-primary)] shadow-md shadow-black/15 ring-1 ring-white/40 transition-all hover:scale-105 hover:shadow-lg sm:inline-block"
             >
               Sign In
             </Link>

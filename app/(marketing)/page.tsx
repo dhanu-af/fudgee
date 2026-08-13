@@ -81,6 +81,7 @@ export default async function StorefrontHomePage() {
         heading={settings?.aboutHeading ?? null}
         body={settings?.aboutBody ?? null}
         imageUrl={settings?.aboutImageUrl ?? null}
+        videoUrl={settings?.aboutVideoUrl ?? null}
       />
       <FaqSection items={faqItems} />
       <ContactSection settings={settings} />

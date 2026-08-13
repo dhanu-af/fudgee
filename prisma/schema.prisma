@@ -602,8 +602,12 @@ model Category {
 }
 
 model GalleryItem {
-  id        String   @id @default(cuid())
-  imageUrl  String
+  id       String  @id @default(cuid())
+  imageUrl String
+  // Optional — when set, GallerySection plays this instead of showing
+  // imageUrl on the public site. imageUrl stays required either way, so it
+  // still has a thumbnail in the admin table even for a video item.
+  videoUrl  String?
   caption   String?
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
@@ -700,6 +704,9 @@ model StorefrontSettings {
   aboutHeading         String?
   aboutBody            String?
   aboutImageUrl        String?
+  // Same priority pattern as heroVideoUrl — takes over from aboutImageUrl in
+  // AboutSection when set.
+  aboutVideoUrl        String?
   contactEmail         String?
   contactPhone         String?
   contactAddress       String?

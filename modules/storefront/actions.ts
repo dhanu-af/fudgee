@@ -93,6 +93,7 @@ export async function createGalleryItem(_prev: StorefrontFormState, formData: Fo
 
   const parsed = galleryItemSchema.safeParse({
     imageUrl: formData.get("imageUrl"),
+    videoUrl: formData.get("videoUrl"),
     caption: formData.get("caption"),
     sortOrder: formData.get("sortOrder"),
     isActive: formData.get("isActive") === "on",
@@ -114,6 +115,7 @@ export async function updateGalleryItem(
 
   const parsed = galleryItemSchema.safeParse({
     imageUrl: formData.get("imageUrl"),
+    videoUrl: formData.get("videoUrl"),
     caption: formData.get("caption"),
     sortOrder: formData.get("sortOrder"),
     isActive: formData.get("isActive") === "on",

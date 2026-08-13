@@ -17,6 +17,7 @@ type StorefrontSettings = {
   aboutHeading: string | null;
   aboutBody: string | null;
   aboutImageUrl: string | null;
+  aboutVideoUrl: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
   contactAddress: string | null;
@@ -70,6 +71,7 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
           <Textarea id="aboutBody" name="aboutBody" rows={5} defaultValue={settings?.aboutBody ?? ""} />
         </div>
         <ImageUploadField name="aboutImageUrl" label="About image" defaultValue={settings?.aboutImageUrl} />
+        <VideoUploadField name="aboutVideoUrl" label="About video" defaultValue={settings?.aboutVideoUrl} />
       </section>
 
       <section className="flex flex-col gap-4">

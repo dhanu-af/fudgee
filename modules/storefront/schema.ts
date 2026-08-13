@@ -48,6 +48,7 @@ export type CategoryInput = z.infer<typeof categorySchema>;
 
 export const galleryItemSchema = z.object({
   imageUrl: z.string().min(1, "Image URL is required").max(2000),
+  videoUrl: optionalText(2000),
   caption: optionalText(300),
   sortOrder: z.coerce.number().int().default(0),
   isActive: z.coerce.boolean(),
@@ -133,6 +134,7 @@ export const storefrontSettingsSchema = z.object({
   aboutHeading: optionalText(200),
   aboutBody: optionalText(3000),
   aboutImageUrl: optionalText(2000),
+  aboutVideoUrl: optionalText(2000),
   contactEmail: z
     .string()
     .email("Must be a valid email")

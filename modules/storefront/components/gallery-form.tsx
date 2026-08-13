@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploadField } from "@/modules/storefront/components/image-upload-field";
+import { VideoUploadField } from "@/modules/storefront/components/video-upload-field";
 import type { StorefrontFormState } from "@/modules/storefront/actions";
 
 type GalleryItem = {
   id: string;
   imageUrl: string;
+  videoUrl: string | null;
   caption: string | null;
   sortOrder: number;
   isActive: boolean;
@@ -28,6 +30,7 @@ export function GalleryForm({
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
       <ImageUploadField name="imageUrl" label="Photo" defaultValue={item?.imageUrl} required />
+      <VideoUploadField name="videoUrl" label="Video (optional — plays instead of the photo above)" defaultValue={item?.videoUrl} />
       <div className="flex flex-col gap-2">
         <Label htmlFor="caption">Caption</Label>
         <Input id="caption" name="caption" defaultValue={item?.caption ?? ""} />

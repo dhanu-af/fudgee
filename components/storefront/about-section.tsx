@@ -6,14 +6,17 @@ type Props = {
   heading: string | null;
   body: string | null;
   imageUrl: string | null;
+  videoUrl?: string | null;
 };
 
-export function AboutSection({ heading, body, imageUrl }: Props) {
+export function AboutSection({ heading, body, imageUrl, videoUrl }: Props) {
   return (
     <section id="about" className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
       <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
         <Reveal className="relative aspect-[4/3] overflow-hidden rounded-[2.5rem] ring-1 ring-[var(--sf-border)]">
-          {imageUrl ? (
+          {videoUrl ? (
+            <video src={videoUrl} autoPlay muted loop playsInline className="absolute inset-0 size-full object-cover" />
+          ) : imageUrl ? (
             <Image
               src={imageUrl}
               alt=""

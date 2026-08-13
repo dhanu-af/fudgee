@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUploadField } from "@/modules/storefront/components/image-upload-field";
+import { VideoUploadField } from "@/modules/storefront/components/video-upload-field";
 import { updateStorefrontSettings } from "@/modules/storefront/actions";
 
 type StorefrontSettings = {
   heroHeading: string | null;
   heroSubheading: string | null;
   heroImageUrl: string | null;
+  heroVideoUrl: string | null;
   aboutHeading: string | null;
   aboutBody: string | null;
   aboutImageUrl: string | null;
@@ -54,6 +56,7 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
           <Textarea id="heroSubheading" name="heroSubheading" defaultValue={settings?.heroSubheading ?? ""} />
         </div>
         <ImageUploadField name="heroImageUrl" label="Hero image" defaultValue={settings?.heroImageUrl} />
+        <VideoUploadField name="heroVideoUrl" label="Hero video" defaultValue={settings?.heroVideoUrl} />
       </section>
 
       <section className="flex flex-col gap-4">

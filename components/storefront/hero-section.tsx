@@ -10,14 +10,16 @@ type Props = {
   heading: string | null;
   subheading: string | null;
   imageUrl: string | null;
+  videoUrl?: string | null;
   images?: { imageUrl: string }[];
 };
 
-// Auto-rotates through every active HeroImage every 5s. Falls back to the
+// heroVideoUrl (set) takes top priority over everything else. Below that,
+// auto-rotates through every active HeroImage every 5s. Falls back to the
 // single StorefrontSettings.heroImageUrl if no HeroImage rows exist yet, and
 // to the gradient placeholder if there's neither — so sites that predate this
-// feature (or haven't uploaded any hero photos) keep working unchanged.
-export function HeroSection({ heading, subheading, imageUrl, images = [] }: Props) {
+// feature (or haven't uploaded any hero photos/video) keep working unchanged.
+export function HeroSection({ heading, subheading, imageUrl, videoUrl, images = [] }: Props) {
   const slides = images.length > 0 ? images.map((img) => img.imageUrl) : imageUrl ? [imageUrl] : [];
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -73,7 +75,16 @@ export function HeroSection({ heading, subheading, imageUrl, images = [] }: Prop
           transition={{ duration: 0.7, ease: "easeOut", delay: 0.15 }}
           className="relative aspect-square w-full max-w-md justify-self-center overflow-hidden rounded-[2.5rem] ring-1 ring-[var(--sf-border)] lg:justify-self-end"
         >
-          {slides.length > 0 ? (
+          {videoUrl ? (
+            <video
+              src={videoUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 size-full object-cover"
+            />
+          ) : slides.length > 0 ? (
             <AnimatePresence mode="sync">
               <motion.div
                 key={slides[activeIndex]}

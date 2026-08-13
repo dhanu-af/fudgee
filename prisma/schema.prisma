@@ -692,6 +692,11 @@ model StorefrontSettings {
   heroHeading          String?
   heroSubheading       String?
   heroImageUrl         String?
+  // Takes priority over both the rotating HeroImage photos and heroImageUrl
+  // when set — see HeroSection, which renders this instead of the photo
+  // carousel whenever it's present. Falls back to photos/gradient as before
+  // when blank.
+  heroVideoUrl         String?
   aboutHeading         String?
   aboutBody            String?
   aboutImageUrl        String?

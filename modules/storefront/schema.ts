@@ -129,6 +129,7 @@ export const storefrontSettingsSchema = z.object({
   heroHeading: optionalText(200),
   heroSubheading: optionalText(500),
   heroImageUrl: optionalText(2000),
+  heroVideoUrl: optionalText(2000),
   aboutHeading: optionalText(200),
   aboutBody: optionalText(3000),
   aboutImageUrl: optionalText(2000),

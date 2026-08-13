@@ -10,10 +10,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
   },
   experimental: {
-    // Default is 1MB, which rejects almost any real photo before the
-    // storefront image-upload action's own 5MB check even runs.
+    // Default is 1MB, which rejects almost any real photo (or the hero
+    // video upload's own 25MB check) before it even runs.
     serverActions: {
-      bodySizeLimit: "8mb",
+      bodySizeLimit: "30mb",
     },
   },
 };

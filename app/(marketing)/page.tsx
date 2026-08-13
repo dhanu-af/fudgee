@@ -56,6 +56,7 @@ export default async function StorefrontHomePage() {
         heading={settings?.heroHeading ?? null}
         subheading={settings?.heroSubheading ?? null}
         imageUrl={settings?.heroImageUrl ?? null}
+        videoUrl={settings?.heroVideoUrl ?? null}
         images={heroImages}
       />
       <PromotionsSection promotions={promotions} />

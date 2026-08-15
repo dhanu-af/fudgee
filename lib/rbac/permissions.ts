@@ -45,10 +45,14 @@ export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 // permissions means adding entries here (+ reseeding), not scattered edits.
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, PermissionKey[]> = {
   super_admin: Object.values(PERMISSIONS),
-  // Admin now has every permission except SETTINGS_MANAGE (site-wide
-  // settings stay Super Admin-only) — including SYSTEM_DELETE, per Dhanu's
-  // request to let Admin delete anywhere, not just Storefront/CMS content.
-  admin: Object.values(PERMISSIONS).filter((p) => p !== PERMISSIONS.SETTINGS_MANAGE),
+  // Admin now has every permission that exists, per Dhanu's request to
+  // release all options to Admin. This is permission-based access only —
+  // it does not touch the separate, role-key-based Super Admin protection
+  // in modules/users/queries.ts and actions.ts (getUsers/getUserById/
+  // deleteUser/updateUser), which independently keeps the Super Admin
+  // account invisible to and undeletable/uneditable by anyone whose own
+  // role isn't super_admin, regardless of which permissions they hold.
+  admin: Object.values(PERMISSIONS),
   production: [
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.PRODUCTION_READ,

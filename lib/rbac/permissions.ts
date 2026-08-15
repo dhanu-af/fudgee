@@ -28,11 +28,10 @@ export const PERMISSIONS = {
   // Deliberately not granted to admin — delete is reserved for super_admin
   // only, across every module, per Dhanu's explicit request.
   SYSTEM_DELETE: "system:delete",
-  // A narrow carve-out: Admin may delete Storefront/CMS content (categories,
-  // gallery, reviews, FAQ, contact messages, newsletter signups) — lower
-  // stakes than operational records — without touching SYSTEM_DELETE's
-  // super-admin-only rule anywhere else. Deleting a Product itself still
-  // requires SYSTEM_DELETE, since that's shared with the rest of the app.
+  // Same delete gate as SYSTEM_DELETE, scoped to Storefront/CMS content
+  // (categories, gallery, reviews, FAQ, contact messages, newsletter
+  // signups) — kept as its own permission rather than folded into
+  // SYSTEM_DELETE in case a future role ever needs one without the other.
   STOREFRONT_DELETE: "storefront:delete",
   SHIPPING_READ: "shipping:read",
   SHIPPING_WRITE: "shipping:write",
@@ -46,9 +45,10 @@ export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 // permissions means adding entries here (+ reseeding), not scattered edits.
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, PermissionKey[]> = {
   super_admin: Object.values(PERMISSIONS),
-  admin: Object.values(PERMISSIONS).filter(
-    (p) => p !== PERMISSIONS.SETTINGS_MANAGE && p !== PERMISSIONS.SYSTEM_DELETE
-  ),
+  // Admin now has every permission except SETTINGS_MANAGE (site-wide
+  // settings stay Super Admin-only) — including SYSTEM_DELETE, per Dhanu's
+  // request to let Admin delete anywhere, not just Storefront/CMS content.
+  admin: Object.values(PERMISSIONS).filter((p) => p !== PERMISSIONS.SETTINGS_MANAGE),
   production: [
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.PRODUCTION_READ,

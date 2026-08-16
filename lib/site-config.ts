@@ -9,3 +9,7 @@ export const SITE_NAME = "Fudgee";
 // paths here and storefront-only paths back to SITE_URL).
 export const ADMIN_URL = "https://admin.fudgee.au";
 export const ADMIN_HOST = "admin.fudgee.au";
+
+// Single global switch for the temporary site-update announcement banner.
+// Flip to false to remove it everywhere without touching any other file.
+export const SHOW_ANNOUNCEMENT_BANNER = true;

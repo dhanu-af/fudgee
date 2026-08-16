@@ -7,6 +7,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { getStorefrontSettings } from "@/modules/storefront/queries";
 import { getCustomerSession } from "@/lib/customer-auth";
 import { SITE_URL, SITE_NAME } from "@/lib/site-config";
+import { AnnouncementBanner } from "@/components/announcement-banner";
 
 const fredoka = Fredoka({ variable: "--font-fredoka", subsets: ["latin"], weight: ["500", "600", "700"] });
 
@@ -57,6 +58,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
   return (
     <div className={`storefront ${fredoka.variable} flex min-h-screen flex-col`}>
       <JsonLd data={organizationJsonLd} />
+      <AnnouncementBanner />
       <CartProvider>
         <StorefrontHeader customerName={customer?.name} />
         <main className="flex-1">{children}</main>

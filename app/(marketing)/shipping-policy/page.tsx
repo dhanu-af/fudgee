@@ -19,6 +19,12 @@ export default async function ShippingPage() {
     <div className="mx-auto max-w-3xl px-5 py-16 sm:px-8">
       <h1 className="font-display text-3xl font-semibold text-[var(--sf-fg)]">Shipping &amp; Delivery</h1>
       <p className="mt-2 text-sm text-[var(--sf-fg)]/60">Last updated: {new Date().toLocaleDateString()}</p>
+      {settings?.legalBusinessName && (
+        <p className="mt-1 text-sm text-[var(--sf-fg)]/60">
+          Issued by {settings.legalBusinessName}
+          {settings.abn && ` (ABN ${settings.abn})`}
+        </p>
+      )}
       <div className="mt-8 space-y-6 text-[var(--sf-fg)]/80">
         <section>
           <h2 className="font-display text-lg font-semibold text-[var(--sf-fg)]">Delivery areas</h2>

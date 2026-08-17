@@ -62,6 +62,22 @@ export function getPromotionById(id: string) {
   return db.promotion.findUnique({ where: { id } });
 }
 
+export function getDeliveryZones() {
+  return db.deliveryZone.findMany({ orderBy: [{ minKm: "asc" }, { sortOrder: "asc" }] });
+}
+
+export function getDeliveryZoneById(id: string) {
+  return db.deliveryZone.findUnique({ where: { id } });
+}
+
+export function getDeliveryFreeRules() {
+  return db.deliveryFreeRule.findMany({ orderBy: [{ priority: "asc" }, { createdAt: "desc" }] });
+}
+
+export function getDeliveryFreeRuleById(id: string) {
+  return db.deliveryFreeRule.findUnique({ where: { id } });
+}
+
 // Cached per-request (React cache()) since both the (marketing) layout and
 // getStorefrontHomepageData below need the same singleton row — without
 // this, a homepage visit fetched it twice.

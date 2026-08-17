@@ -161,8 +161,40 @@ export const storefrontSettingsSchema = z.object({
   dispatchTime: optionalText(200),
   estimatedDeliveryTime: optionalText(200),
   courierName: optionalText(200),
+  originAddress: optionalText(500),
 });
 export type StorefrontSettingsInput = z.infer<typeof storefrontSettingsSchema>;
+
+// --- Delivery pricing (admin-managed — see /storefront/delivery) ---
+
+export const deliveryZoneSchema = z
+  .object({
+    minKm: z.coerce.number().min(0, "Must be 0 or greater"),
+    maxKm: z
+      .preprocess(
+        (v) => (v === "" || v == null ? undefined : v),
+        z.coerce.number().positive("Must be greater than 0").optional()
+      )
+      .transform((v) => v ?? null),
+    fee: z.coerce.number().min(0, "Fee must be 0 or greater"),
+    label: optionalText(100),
+    sortOrder: z.coerce.number().int().default(0),
+    isActive: z.coerce.boolean(),
+  })
+  .refine((data) => data.maxKm == null || data.maxKm > data.minKm, {
+    message: "Max distance must be greater than min distance (or left blank for no upper limit)",
+    path: ["maxKm"],
+  });
+export type DeliveryZoneInput = z.infer<typeof deliveryZoneSchema>;
+
+export const deliveryFreeRuleSchema = z.object({
+  minOrderValue: z.coerce.number().min(0, "Must be 0 or greater"),
+  maxKm: z.coerce.number().positive("Must be greater than 0"),
+  label: z.string().min(1, "Label is required").max(300),
+  priority: z.coerce.number().int().default(0),
+  isActive: z.coerce.boolean(),
+});
+export type DeliveryFreeRuleInput = z.infer<typeof deliveryFreeRuleSchema>;
 
 // --- Public, unauthenticated forms (checkout, contact, newsletter) ---
 // Server-side validation here is the only real gate (there's no login wall

@@ -97,6 +97,14 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
           <span className="text-muted-foreground">Subtotal</span>
           <span>{String(so.subtotal)}</span>
         </div>
+        {(so.deliveryFee !== null || so.deliveryFeeReason !== null) && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">
+              Delivery{so.deliveryFeeReason ? ` (${so.deliveryFeeReason})` : ""}
+            </span>
+            <span>{so.deliveryFee !== null && Number(so.deliveryFee) > 0 ? Number(so.deliveryFee).toFixed(2) : "FREE"}</span>
+          </div>
+        )}
         {so.gstAmount !== null && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">Includes GST</span>

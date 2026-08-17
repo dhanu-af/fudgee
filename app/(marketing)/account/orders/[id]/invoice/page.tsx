@@ -114,6 +114,14 @@ export default async function CustomerInvoicePage({ params }: { params: Promise<
               <span className="text-neutral-500">Subtotal</span>
               <span>{Number(order.subtotal).toFixed(2)}</span>
             </div>
+            {(order.deliveryFee != null || order.deliveryFeeReason != null) && (
+              <div className="flex justify-between py-1">
+                <span className="text-neutral-500">
+                  Delivery{order.deliveryFeeReason ? ` (${order.deliveryFeeReason})` : ""}
+                </span>
+                <span>{order.deliveryFee != null && Number(order.deliveryFee) > 0 ? Number(order.deliveryFee).toFixed(2) : "FREE"}</span>
+              </div>
+            )}
             {order.gstAmount != null && (
               <div className="flex justify-between py-1">
                 <span className="text-neutral-500">GST (incl.)</span>

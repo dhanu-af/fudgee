@@ -39,6 +39,9 @@ type StorefrontSettings = {
   dispatchTime: string | null;
   estimatedDeliveryTime: string | null;
   courierName: string | null;
+  originAddress: string | null;
+  originLat: unknown;
+  originLng: unknown;
 } | null;
 
 export function StorefrontSettingsForm({ settings }: { settings: StorefrontSettings }) {
@@ -96,9 +99,36 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
 
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold tracking-tight">Shipping &amp; delivery</h2>
+
+        <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-4">
+          <Label htmlFor="originAddress">Delivery origin address</Label>
+          <p className="text-xs text-muted-foreground">
+            Where delivery distance is measured FROM (your kitchen/dispatch address) — this is what actually
+            calculates each customer&apos;s delivery fee at checkout. Manage the fee amounts per distance and the
+            free-delivery rule on the{" "}
+            <a href="/storefront/delivery" className="underline">
+              Delivery pricing
+            </a>{" "}
+            page.
+          </p>
+          <Input
+            id="originAddress"
+            name="originAddress"
+            placeholder="e.g. 12 Example St, Southport QLD 4215"
+            defaultValue={settings?.originAddress ?? ""}
+          />
+          {settings?.originAddress && (
+            <p className={`text-xs ${settings.originLat != null ? "text-primary" : "text-destructive"}`}>
+              {settings.originLat != null
+                ? "✓ Location found — delivery fees calculate automatically."
+                : "⚠ Couldn't locate this address — check the spelling/detail, then save again. Until this resolves, delivery fees will show as \"to be confirmed\" at checkout."}
+            </p>
+          )}
+        </div>
+
         <p className="text-xs text-muted-foreground">
-          Free text shown on the Shipping &amp; Delivery page — checkout doesn&apos;t currently charge a delivery
-          fee, so these are informational only. Leave any field blank to omit that line from the page.
+          The fields below are free text shown on the Shipping &amp; Delivery page only — they don&apos;t affect the
+          automatic fee calculation above. Leave any field blank to omit that line from the page.
         </p>
         <div className="flex flex-col gap-2">
           <Label htmlFor="deliveryAreas">Delivery areas</Label>

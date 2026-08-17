@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
 import Image from "next/image";
 import { useCart } from "@/lib/storefront/cart-context";
-import { createStripeCheckout } from "@/modules/storefront/checkout-actions";
+import { createStripeCheckout, getDeliveryQuoteAction } from "@/modules/storefront/checkout-actions";
+import type { DeliveryQuote } from "@/lib/storefront/delivery";
 import { applyPromoCode } from "@/modules/customers/actions";
 import { gstComponent, applyDiscount } from "@/lib/storefront/gst";
 import { isOptimizableImageUrl } from "@/lib/utils";
@@ -13,11 +14,14 @@ import { isOptimizableImageUrl } from "@/lib/utils";
 type DiscountTier = { title: string; discountPercent: number; minimumSpend: number | null };
 
 export function CartView({ discounts }: { discounts: DiscountTier[] }) {
-  const { items, updateQuantity, removeItem, subtotal, gst } = useCart();
+  const { items, updateQuantity, removeItem, subtotal } = useCart();
   const [state, formAction, pending] = useActionState(createStripeCheckout, {});
   const [showCheckout, setShowCheckout] = useState(false);
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [promoState, promoFormAction, promoPending] = useActionState(applyPromoCode, {});
+  const [address, setAddress] = useState("");
+  const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
+  const [quotePending, setQuotePending] = useState(false);
 
   // Picks the highest-percent tier whose minimum spend (if any) the current
   // subtotal meets — mirrors checkout-actions.ts's server-side selection
@@ -38,7 +42,37 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
   // what Stripe will actually charge.
   const discountAmount = discount ? applyDiscount(subtotal, discount.discountPercent) : 0;
   const discountedSubtotal = subtotal - discountAmount;
-  const discountedGst = discountAmount > 0 ? gstComponent(discountedSubtotal) : gst;
+
+  // Re-quoted (debounced) any time the address text or the discounted
+  // subtotal changes — same quoteDelivery() checkout-actions.ts uses to
+  // actually charge, via getDeliveryQuoteAction, so this preview can never
+  // show a different fee than what checkout will really charge.
+  useEffect(() => {
+    if (!address.trim()) {
+      setDeliveryQuote(null);
+      setQuotePending(false);
+      return;
+    }
+    setQuotePending(true);
+    const timer = setTimeout(() => {
+      getDeliveryQuoteAction(address, discountedSubtotal)
+        .then(setDeliveryQuote)
+        .catch(() =>
+          setDeliveryQuote({
+            status: "unknown",
+            reason: "We'll confirm your delivery fee directly.",
+            distanceKm: null,
+          })
+        )
+        .finally(() => setQuotePending(false));
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [address, discountedSubtotal]);
+
+  const deliveryFee = deliveryQuote?.status === "charged" ? deliveryQuote.fee : 0;
+  const grandTotal = discountedSubtotal + deliveryFee;
+  const discountedGst = gstComponent(grandTotal);
+  const blockedByDelivery = deliveryQuote?.status === "out_of_range";
 
   if (items.length === 0) {
     return (
@@ -135,9 +169,21 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
             <span>−${discountAmount.toFixed(2)}</span>
           </div>
         )}
+        {deliveryQuote && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--sf-muted)]">Delivery</span>
+            {deliveryQuote.status === "free" ? (
+              <span className="font-medium text-[var(--sf-primary)]">FREE</span>
+            ) : deliveryQuote.status === "charged" ? (
+              <span className="text-[var(--sf-muted)]">${deliveryQuote.fee.toFixed(2)}</span>
+            ) : (
+              <span className="text-[var(--sf-muted)]">To be confirmed</span>
+            )}
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <span className="text-lg font-semibold text-[var(--sf-fg)]">Total</span>
-          <span className="text-2xl font-semibold text-[var(--sf-primary)]">${discountedSubtotal.toFixed(2)}</span>
+          <span className="text-2xl font-semibold text-[var(--sf-primary)]">${grandTotal.toFixed(2)}</span>
         </div>
         <div className="text-right text-xs text-[var(--sf-muted)]">Includes ${discountedGst.toFixed(2)} GST</div>
       </div>
@@ -208,7 +254,32 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="shippingAddress" className="text-sm font-medium text-[var(--sf-fg)]">Delivery address</label>
-            <textarea id="shippingAddress" name="shippingAddress" required rows={2} className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--sf-primary)]" />
+            <textarea
+              id="shippingAddress"
+              name="shippingAddress"
+              required
+              rows={2}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--sf-primary)]"
+            />
+            {quotePending ? (
+              <p className="text-xs text-[var(--sf-muted)]">Calculating delivery fee...</p>
+            ) : deliveryQuote?.status === "free" ? (
+              <p className="text-xs font-medium text-[var(--sf-primary)]">FREE DELIVERY — {deliveryQuote.reason}</p>
+            ) : deliveryQuote?.status === "charged" ? (
+              <p className="text-xs text-[var(--sf-muted)]">
+                Delivery: ${deliveryQuote.fee.toFixed(2)}
+                {deliveryQuote.zoneLabel ? ` (${deliveryQuote.zoneLabel})` : ""}
+              </p>
+            ) : deliveryQuote?.status === "out_of_range" ? (
+              <p className="text-xs font-medium text-red-500">
+                Sorry, that address is outside our delivery area (up to {deliveryQuote.maxKm}km). Please check the
+                address or contact us directly.
+              </p>
+            ) : deliveryQuote?.status === "unknown" ? (
+              <p className="text-xs text-[var(--sf-muted)]">{deliveryQuote.reason}</p>
+            ) : null}
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="notes" className="text-sm font-medium text-[var(--sf-fg)]">Notes (optional)</label>
@@ -219,10 +290,14 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
 
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || blockedByDelivery}
             className="mt-2 rounded-full bg-[var(--sf-primary)] py-4 text-center text-base font-semibold text-[var(--sf-primary-foreground)] shadow-md shadow-[var(--sf-primary)]/20 transition-transform hover:scale-[1.02] disabled:opacity-60"
           >
-            {pending ? "Redirecting to payment..." : `Pay now — $${discountedSubtotal.toFixed(2)}`}
+            {pending
+              ? "Redirecting to payment..."
+              : blockedByDelivery
+                ? "Delivery unavailable for this address"
+                : `Pay now — $${grandTotal.toFixed(2)}`}
           </button>
         </form>
       )}

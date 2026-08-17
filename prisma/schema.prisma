@@ -430,6 +430,16 @@ model SalesOrder {
   // changes); the pre-discount amount is always `subtotal + discountAmount`.
   discountPercent         Int?
   discountAmount          Decimal?                @db.Decimal(14, 4)
+  // Storefront-only, same as discountPercent/discountAmount above — the
+  // fee quoteDelivery() (lib/storefront/delivery.ts) actually charged at
+  // checkout, snapshotted so it survives later DeliveryZone/DeliveryFreeRule
+  // edits. `total` already includes this. Null on admin-created orders and
+  // on orders where delivery pricing couldn't be resolved (fee defaulted to
+  // 0 and staff need to confirm the real fee manually — see `notes`).
+  deliveryFee             Decimal?                @db.Decimal(14, 4)
+  // The free-delivery reason shown to the customer, or the matched zone's
+  // label, or null if no delivery fee was charged/applicable.
+  deliveryFeeReason       String?
   paymentStatus           SalesOrderPaymentStatus @default(UNPAID)
   stripeCheckoutSessionId String?                 @unique
   stripePaymentIntentId   String?
@@ -732,8 +742,9 @@ model StorefrontSettings {
   abn               String?
 
   // --- Shipping & delivery — free text so Dhanu can update these without a
-  // code change; checkout currently charges no shipping fee at all, so
-  // these are informational/policy text, not wired into any calculation.
+  // code change; policy text only, not wired into any calculation. The
+  // actual delivery-fee calculation is driven by DeliveryZone/
+  // DeliveryFreeRule below, keyed off originLat/originLng, not this text.
   deliveryAreas         String?
   deliveryFee           String?
   freeDeliveryThreshold String?
@@ -741,8 +752,56 @@ model StorefrontSettings {
   estimatedDeliveryTime String?
   courierName           String?
 
+  // --- Delivery-fee calculation origin — the address delivery distance is
+  // measured FROM (Fudgee's kitchen/dispatch point), not a customer-facing
+  // field. originLat/originLng are resolved by geocoding originAddress (see
+  // updateStorefrontSettings in actions.ts) whenever it changes; a null pair
+  // means distance-based delivery pricing can't run yet (quoteDelivery in
+  // lib/storefront/delivery.ts falls back to "unknown" and lets staff
+  // confirm the fee manually rather than blocking checkout).
+  originAddress String?
+  originLat     Decimal? @db.Decimal(9, 6)
+  originLng     Decimal? @db.Decimal(9, 6)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Distance-based delivery pricing tiers, admin-managed (see
+// /storefront/delivery). Evaluated by quoteDelivery() only after no
+// DeliveryFreeRule matched — the lowest minKm..maxKm band that contains the
+// customer's distance wins. maxKm null means "no upper bound" for that band;
+// if every active zone has a maxKm set, the highest one becomes the
+// effective delivery radius — anything beyond it is "out of range" (no
+// delivery at all), not just "no zone charge configured."
+model DeliveryZone {
+  id        String   @id @default(cuid())
+  minKm     Decimal  @db.Decimal(6, 2)
+  maxKm     Decimal? @db.Decimal(6, 2)
+  fee       Decimal  @db.Decimal(10, 2)
+  label     String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Order-value + distance combinations that qualify for free delivery,
+// admin-managed (see /storefront/delivery). Checked in `priority` order
+// (ascending) before DeliveryZone — the first rule whose minOrderValue and
+// maxKm are both satisfied wins outright, no stacking with a second rule or
+// with a DeliveryZone charge. `label` is shown to the customer verbatim as
+// the "why is this free" explanation at checkout (e.g. "Free delivery –
+// orders over $100 within 40 km.").
+model DeliveryFreeRule {
+  id            String   @id @default(cuid())
+  minOrderValue Decimal  @db.Decimal(10, 2)
+  maxKm         Decimal  @db.Decimal(6, 2)
+  label         String
+  priority      Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model ContactMessage {

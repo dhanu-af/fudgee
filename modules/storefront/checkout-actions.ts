@@ -14,6 +14,15 @@ import { getCustomerSession } from "@/lib/customer-auth";
 import { checkoutSchema, checkoutLineSchema } from "@/modules/storefront/schema";
 import { getBestActiveDiscount } from "@/modules/storefront/queries";
 import { getValidPromoCode } from "@/modules/customers/queries";
+import { quoteDelivery, type DeliveryQuote } from "@/lib/storefront/delivery";
+
+// Called directly from CartView (a client component) as the address/subtotal
+// change, for the live "FREE DELIVERY" / "$X delivery" preview — same
+// quoteDelivery() the real charge below uses, so the preview can never show
+// a different number than what checkout actually charges.
+export async function getDeliveryQuoteAction(address: string, subtotal: number): Promise<DeliveryQuote> {
+  return quoteDelivery(address, subtotal);
+}
 
 // An unauthenticated entry point — re-derives everything from the database
 // (prices, stock status, discount eligibility) and never trusts a
@@ -104,7 +113,24 @@ export async function createStripeCheckout(
   }
   const discountAmount = discountPercent ? applyDiscount(rawSubtotal, discountPercent) : 0;
   const subtotal = rawSubtotal - discountAmount;
-  const gstAmount = gstComponent(subtotal);
+
+  // The authoritative delivery quote — never trusts whatever fee the client
+  // preview showed. An address beyond the configured delivery radius (e.g.
+  // Dhanu's 40km cutoff) hard-blocks checkout, since that's a deliberate
+  // "we don't deliver there" business rule; a geocoding/config hiccup
+  // ("unknown") does not — the order proceeds with a $0 delivery fee and a
+  // note for staff to confirm the real fee manually.
+  const deliveryQuote = await quoteDelivery(parsed.data.shippingAddress, subtotal);
+  if (deliveryQuote.status === "out_of_range") {
+    return {
+      error: `Sorry, that address is outside our delivery area (we deliver up to ${deliveryQuote.maxKm}km). Please check the address or contact us directly.`,
+    };
+  }
+  const deliveryFee = deliveryQuote.status === "charged" ? deliveryQuote.fee : 0;
+  const deliveryFeeReason = deliveryQuote.status === "free" ? deliveryQuote.reason : deliveryQuote.status === "charged" ? deliveryQuote.zoneLabel : null;
+
+  const total = subtotal + deliveryFee;
+  const gstAmount = gstComponent(total);
 
   // A signed-in customer's own account record is authoritative — skip the
   // email-lookup path entirely so their order always links to the account
@@ -136,6 +162,9 @@ export async function createStripeCheckout(
 
   const notesParts = ["Placed via website storefront (Stripe checkout)."];
   if (parsed.data.notes) notesParts.push(`Customer note: ${parsed.data.notes}`);
+  if (deliveryQuote.status === "unknown") {
+    notesParts.push(`⚠ Delivery fee could not be calculated automatically (${deliveryQuote.reason}) — confirm with customer.`);
+  }
 
   const order = await db.salesOrder.create({
     data: {
@@ -150,10 +179,12 @@ export async function createStripeCheckout(
       shippingAddress: parsed.data.shippingAddress,
       notes: notesParts.join(" "),
       subtotal,
-      total: subtotal,
+      total,
       gstAmount,
       discountPercent,
       discountAmount: discountAmount > 0 ? discountAmount : null,
+      deliveryFee: deliveryFee > 0 ? deliveryFee : null,
+      deliveryFeeReason,
       lines: {
         create: lines.map(({ productId, quantity, unitPrice, lineTotal, unitCostAtSale }) => ({
           productId,
@@ -223,17 +254,39 @@ export async function createStripeCheckout(
       stripeCouponId = coupon.id;
     }
 
+    const deliveryLineItem =
+      deliveryFee > 0
+        ? [
+            {
+              quantity: 1,
+              price_data: {
+                currency: "aud",
+                // The coupon above is percent-off-the-whole-session in
+                // Stripe, so it would otherwise also shave the delivery fee
+                // — grossing this line up by the same percentage first
+                // means Stripe's coupon nets it back down to exactly
+                // `deliveryFee`, matching order.total above to the cent.
+                unit_amount: Math.round((discountPercent ? deliveryFee / (1 - discountPercent / 100) : deliveryFee) * 100),
+                product_data: { name: "Delivery" },
+              },
+            },
+          ]
+        : [];
+
     const session = await getStripe().checkout.sessions.create({
       mode: "payment",
       customer_email: parsed.data.email,
-      line_items: lines.map((line) => ({
-        quantity: line.quantity,
-        price_data: {
-          currency: "aud",
-          unit_amount: Math.round(line.unitPrice * 100),
-          product_data: { name: line.name },
-        },
-      })),
+      line_items: [
+        ...lines.map((line) => ({
+          quantity: line.quantity,
+          price_data: {
+            currency: "aud",
+            unit_amount: Math.round(line.unitPrice * 100),
+            product_data: { name: line.name },
+          },
+        })),
+        ...deliveryLineItem,
+      ],
       ...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cart`,

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { notifyAdmins, type AdminNotifyResult } from "@/lib/whatsapp";
+import { geocodeAddress } from "@/lib/storefront/geocode";
 import {
   categorySchema,
   galleryItemSchema,
@@ -14,6 +15,8 @@ import {
   faqItemSchema,
   promotionSchema,
   storefrontSettingsSchema,
+  deliveryZoneSchema,
+  deliveryFreeRuleSchema,
 } from "@/modules/storefront/schema";
 
 export type StorefrontFormState = { error?: string; success?: boolean };
@@ -391,15 +394,125 @@ export async function updateStorefrontSettings(
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
 
   const existing = await db.storefrontSettings.findFirst();
+
+  // Re-geocode only when the origin address actually changed — this is a
+  // combined settings form saved on every field edit, and hitting Nominatim
+  // on every unrelated save (hero copy, socials, etc.) would be wasteful and
+  // slow the save down for no reason. A failed geocode never blocks the
+  // save (this form covers a dozen unrelated fields); it just leaves
+  // originLat/originLng null, which quoteDelivery() treats as "confirm the
+  // fee manually" rather than crashing checkout.
+  let originLat: number | null = existing?.originLat != null ? Number(existing.originLat) : null;
+  let originLng: number | null = existing?.originLng != null ? Number(existing.originLng) : null;
+  if (parsed.data.originAddress !== (existing?.originAddress ?? null)) {
+    const geocoded = parsed.data.originAddress ? await geocodeAddress(parsed.data.originAddress) : null;
+    originLat = geocoded?.lat ?? null;
+    originLng = geocoded?.lng ?? null;
+  }
+
+  const data = { ...parsed.data, originLat, originLng };
   if (existing) {
-    await db.storefrontSettings.update({ where: { id: existing.id }, data: parsed.data });
+    await db.storefrontSettings.update({ where: { id: existing.id }, data });
   } else {
-    await db.storefrontSettings.create({ data: parsed.data });
+    await db.storefrontSettings.create({ data });
   }
 
   revalidatePath("/storefront/settings");
+  revalidatePath("/storefront/delivery");
   revalidatePath("/");
   return { success: true };
+}
+
+// --- Delivery zones (distance -> fee bands, see lib/storefront/delivery.ts) ---
+
+export async function createDeliveryZone(
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = deliveryZoneSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.deliveryZone.create({ data: parsed.data });
+
+  revalidatePath("/storefront/delivery");
+  redirect("/storefront/delivery");
+}
+
+export async function updateDeliveryZone(
+  id: string,
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = deliveryZoneSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.deliveryZone.update({ where: { id }, data: parsed.data });
+
+  revalidatePath("/storefront/delivery");
+  redirect("/storefront/delivery");
+}
+
+export async function deleteDeliveryZone(
+  id: string,
+  _prev: StorefrontFormState,
+  _formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
+
+  await db.deliveryZone.delete({ where: { id } }).catch(() => null);
+
+  revalidatePath("/storefront/delivery");
+  redirect("/storefront/delivery");
+}
+
+// --- Free-delivery rules (order value + distance -> free, checked before zones) ---
+
+export async function createDeliveryFreeRule(
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = deliveryFreeRuleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.deliveryFreeRule.create({ data: parsed.data });
+
+  revalidatePath("/storefront/delivery");
+  redirect("/storefront/delivery");
+}
+
+export async function updateDeliveryFreeRule(
+  id: string,
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = deliveryFreeRuleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.deliveryFreeRule.update({ where: { id }, data: parsed.data });
+
+  revalidatePath("/storefront/delivery");
+  redirect("/storefront/delivery");
+}
+
+export async function deleteDeliveryFreeRule(
+  id: string,
+  _prev: StorefrontFormState,
+  _formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
+
+  await db.deliveryFreeRule.delete({ where: { id } }).catch(() => null);
+
+  revalidatePath("/storefront/delivery");
+  redirect("/storefront/delivery");
 }
 
 // --- WhatsApp integration test (one-off connectivity check, not tied to any DB row) ---

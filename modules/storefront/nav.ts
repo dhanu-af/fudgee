@@ -7,6 +7,7 @@ export const STOREFRONT_TABS = [
   { label: "Hero Images", href: "/storefront/hero-images" },
   { label: "Reviews", href: "/storefront/reviews" },
   { label: "FAQ", href: "/storefront/faq" },
+  { label: "Delivery", href: "/storefront/delivery" },
   { label: "Messages", href: "/storefront/messages" },
   { label: "Newsletter", href: "/storefront/newsletter" },
   { label: "Settings", href: "/storefront/settings" },

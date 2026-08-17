@@ -20,8 +20,12 @@ import { quoteDelivery, type DeliveryQuote } from "@/lib/storefront/delivery";
 // change, for the live "FREE DELIVERY" / "$X delivery" preview — same
 // quoteDelivery() the real charge below uses, so the preview can never show
 // a different number than what checkout actually charges.
-export async function getDeliveryQuoteAction(address: string, subtotal: number): Promise<DeliveryQuote> {
-  return quoteDelivery(address, subtotal);
+export async function getDeliveryQuoteAction(
+  address: string,
+  subtotal: number,
+  location?: { suburb?: string; postcode?: string }
+): Promise<DeliveryQuote> {
+  return quoteDelivery(address, subtotal, location);
 }
 
 // An unauthenticated entry point — re-derives everything from the database
@@ -120,7 +124,10 @@ export async function createStripeCheckout(
   // "we don't deliver there" business rule; a geocoding/config hiccup
   // ("unknown") does not — the order proceeds with a $0 delivery fee and a
   // note for staff to confirm the real fee manually.
-  const deliveryQuote = await quoteDelivery(parsed.data.shippingAddress, subtotal);
+  const deliveryQuote = await quoteDelivery(parsed.data.shippingAddress, subtotal, {
+    suburb: parsed.data.deliverySuburb,
+    postcode: parsed.data.deliveryPostcode,
+  });
   if (deliveryQuote.status === "out_of_range") {
     return {
       error: `Sorry, that address is outside our delivery area (we deliver up to ${deliveryQuote.maxKm}km). Please check the address or contact us directly.`,

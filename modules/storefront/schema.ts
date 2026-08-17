@@ -196,6 +196,19 @@ export const deliveryFreeRuleSchema = z.object({
 });
 export type DeliveryFreeRuleInput = z.infer<typeof deliveryFreeRuleSchema>;
 
+export const deliverySuburbOverrideSchema = z
+  .object({
+    suburb: optionalText(200),
+    postcode: optionalText(10),
+    zoneId: z.string().min(1, "Choose a zone"),
+    isActive: z.coerce.boolean(),
+  })
+  .refine((data) => data.suburb != null || data.postcode != null, {
+    message: "Enter a suburb, a postcode, or both",
+    path: ["suburb"],
+  });
+export type DeliverySuburbOverrideInput = z.infer<typeof deliverySuburbOverrideSchema>;
+
 // --- Public, unauthenticated forms (checkout, contact, newsletter) ---
 // Server-side validation here is the only real gate (there's no login wall
 // for shoppers by design), so these stay stricter than the admin schemas
@@ -211,6 +224,13 @@ export const checkoutSchema = z.object({
   email: z.string().email("Valid email is required").max(200),
   phone: z.string().max(50).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
   shippingAddress: z.string().min(1, "Delivery address is required").max(500),
+  // The suburb/postcode the customer typed into the checkout's own separate
+  // boxes — sent alongside shippingAddress (not parsed back out of it) so
+  // quoteDelivery() can check DeliverySuburbOverride without needing
+  // geocoding to succeed first. Optional since older/direct API callers
+  // might not send them; a missing value just means overrides can't match.
+  deliverySuburb: z.string().max(200).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
+  deliveryPostcode: z.string().max(10).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
   notes: z.string().max(1000).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
   linesJson: z.string().min(1),
   promoCode: z.string().max(30).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),

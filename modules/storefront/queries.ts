@@ -78,6 +78,17 @@ export function getDeliveryFreeRuleById(id: string) {
   return db.deliveryFreeRule.findUnique({ where: { id } });
 }
 
+export function getDeliverySuburbOverrides() {
+  return db.deliverySuburbOverride.findMany({
+    include: { zone: true },
+    orderBy: [{ suburb: "asc" }, { postcode: "asc" }],
+  });
+}
+
+export function getDeliverySuburbOverrideById(id: string) {
+  return db.deliverySuburbOverride.findUnique({ where: { id } });
+}
+
 // Cached per-request (React cache()) since both the (marketing) layout and
 // getStorefrontHomepageData below need the same singleton row — without
 // this, a homepage visit fetched it twice.

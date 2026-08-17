@@ -67,7 +67,7 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
     }
     setQuotePending(true);
     const timer = setTimeout(() => {
-      getDeliveryQuoteAction(address, discountedSubtotal)
+      getDeliveryQuoteAction(address, discountedSubtotal, { suburb, postcode })
         .then(setDeliveryQuote)
         .catch(() =>
           setDeliveryQuote({
@@ -79,7 +79,7 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
         .finally(() => setQuotePending(false));
     }, 700);
     return () => clearTimeout(timer);
-  }, [address, discountedSubtotal]);
+  }, [address, discountedSubtotal, suburb, postcode]);
 
   const deliveryFee = deliveryQuote?.status === "charged" ? deliveryQuote.fee : 0;
   const grandTotal = discountedSubtotal + deliveryFee;
@@ -267,6 +267,8 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-[var(--sf-fg)]">Delivery address</span>
             <input type="hidden" name="shippingAddress" value={address} />
+            <input type="hidden" name="deliverySuburb" value={suburb} />
+            <input type="hidden" name="deliveryPostcode" value={postcode} />
 
             <label htmlFor="street" className="text-xs text-[var(--sf-muted)]">Street address</label>
             <input

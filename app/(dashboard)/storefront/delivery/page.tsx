@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
-import { getDeliveryFreeRules, getDeliveryZones, getStorefrontSettings } from "@/modules/storefront/queries";
+import {
+  getDeliveryFreeRules,
+  getDeliverySuburbOverrides,
+  getDeliveryZones,
+  getStorefrontSettings,
+} from "@/modules/storefront/queries";
 import { deliveryZoneColumns } from "@/modules/storefront/components/delivery-zone-columns";
 import { deliveryFreeRuleColumns } from "@/modules/storefront/components/delivery-free-rule-columns";
+import { deliverySuburbOverrideColumns } from "@/modules/storefront/components/delivery-suburb-override-columns";
 import { DataTable } from "@/components/data-table/data-table";
 import { Button } from "@/components/ui/button";
 import { TabNav } from "@/components/layout/tab-nav";
@@ -11,10 +17,11 @@ import { STOREFRONT_TABS } from "@/modules/storefront/nav";
 
 export default async function StorefrontDeliveryPage() {
   await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
-  const [settings, freeRules, zones] = await Promise.all([
+  const [settings, freeRules, zones, overrides] = await Promise.all([
     getStorefrontSettings(),
     getDeliveryFreeRules(),
     getDeliveryZones(),
+    getDeliverySuburbOverrides(),
   ]);
 
   const originConfigured = settings?.originLat != null && settings?.originLng != null;
@@ -73,6 +80,20 @@ export default async function StorefrontDeliveryPage() {
           <Button render={<Link href="/storefront/delivery/zones/new" />}>New zone</Button>
         </div>
         <DataTable columns={deliveryZoneColumns} data={zones} emptyMessage="No delivery zones yet." />
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold">Suburb/postcode overrides</h1>
+            <p className="text-sm text-muted-foreground">
+              For known areas where straight-line distance gives the wrong zone — pins a suburb or postcode straight
+              to a zone, skipping the distance calculation entirely.
+            </p>
+          </div>
+          <Button render={<Link href="/storefront/delivery/overrides/new" />}>New override</Button>
+        </div>
+        <DataTable columns={deliverySuburbOverrideColumns} data={overrides} emptyMessage="No overrides yet." />
       </div>
     </div>
   );

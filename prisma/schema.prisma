@@ -784,6 +784,26 @@ model DeliveryZone {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  overrides DeliverySuburbOverride[]
+}
+
+// A known-suburb/postcode exception to the straight-line distance
+// calculation — pins an address straight to a DeliveryZone's fee,
+// skipping geocoding/distance entirely, for areas where a straight line
+// gives the wrong zone (e.g. across a river/highway with no direct road).
+// Checked first in quoteDelivery(), before any geocoding is attempted, on
+// whichever of suburb/postcode is set (either one matching is enough — a
+// row only needs to set the field(s) it actually wants to match on).
+model DeliverySuburbOverride {
+  id        String   @id @default(cuid())
+  suburb    String?
+  postcode  String?
+  zoneId    String
+  zone      DeliveryZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Order-value + distance combinations that qualify for free delivery,

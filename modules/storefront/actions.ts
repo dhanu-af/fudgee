@@ -17,6 +17,7 @@ import {
   storefrontSettingsSchema,
   deliveryZoneSchema,
   deliveryFreeRuleSchema,
+  deliverySuburbOverrideSchema,
 } from "@/modules/storefront/schema";
 
 export type StorefrontFormState = { error?: string; success?: boolean };
@@ -510,6 +511,52 @@ export async function deleteDeliveryFreeRule(
   await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
 
   await db.deliveryFreeRule.delete({ where: { id } }).catch(() => null);
+
+  revalidatePath("/storefront/delivery");
+  redirect("/storefront/delivery");
+}
+
+// --- Suburb/postcode delivery-zone overrides (see lib/storefront/delivery.ts) ---
+
+export async function createDeliverySuburbOverride(
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = deliverySuburbOverrideSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.deliverySuburbOverride.create({ data: parsed.data });
+
+  revalidatePath("/storefront/delivery");
+  redirect("/storefront/delivery");
+}
+
+export async function updateDeliverySuburbOverride(
+  id: string,
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = deliverySuburbOverrideSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.deliverySuburbOverride.update({ where: { id }, data: parsed.data });
+
+  revalidatePath("/storefront/delivery");
+  redirect("/storefront/delivery");
+}
+
+export async function deleteDeliverySuburbOverride(
+  id: string,
+  _prev: StorefrontFormState,
+  _formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
+
+  await db.deliverySuburbOverride.delete({ where: { id } }).catch(() => null);
 
   revalidatePath("/storefront/delivery");
   redirect("/storefront/delivery");

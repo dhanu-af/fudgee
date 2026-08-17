@@ -261,8 +261,12 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
               rows={2}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              placeholder="e.g. 15 Main St, Ormeau QLD 4208"
               className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--sf-primary)]"
             />
+            <p className="text-xs text-[var(--sf-muted)]">
+              Include your street number, suburb, state and postcode for the most accurate delivery fee.
+            </p>
             {quotePending ? (
               <p className="text-xs text-[var(--sf-muted)]">Calculating delivery fee...</p>
             ) : deliveryQuote?.status === "free" ? (

@@ -12,4 +12,4 @@ export const ADMIN_HOST = "admin.fudgee.au";
 
 // Single global switch for the temporary site-update announcement banner.
 // Flip to false to remove it everywhere without touching any other file.
-export const SHOW_ANNOUNCEMENT_BANNER = true;
+export const SHOW_ANNOUNCEMENT_BANNER = false;

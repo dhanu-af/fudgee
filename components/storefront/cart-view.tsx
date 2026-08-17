@@ -19,9 +19,21 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
   const [showCheckout, setShowCheckout] = useState(false);
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [promoState, promoFormAction, promoPending] = useActionState(applyPromoCode, {});
-  const [address, setAddress] = useState("");
+  const [street, setStreet] = useState("");
+  const [suburb, setSuburb] = useState("");
+  const [addressState, setAddressState] = useState("");
+  const [postcode, setPostcode] = useState("");
   const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
   const [quotePending, setQuotePending] = useState(false);
+
+  // Combined into the single free-text string checkout-actions.ts (and the
+  // Customer/SalesOrder shippingAddress columns) have always expected —
+  // splitting the boxes is a UI change only, not a data-model one.
+  const address = [street.trim(), [suburb.trim(), addressState, postcode.trim()].filter(Boolean).join(" ")]
+    .filter(Boolean)
+    .join(", ");
+
+  const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 
   // Picks the highest-percent tier whose minimum spend (if any) the current
   // subtotal meets — mirrors checkout-actions.ts's server-side selection
@@ -253,20 +265,70 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
             <input id="phone" name="phone" className="h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 text-sm outline-none focus:border-[var(--sf-primary)]" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="shippingAddress" className="text-sm font-medium text-[var(--sf-fg)]">Delivery address</label>
-            <textarea
-              id="shippingAddress"
-              name="shippingAddress"
+            <span className="text-sm font-medium text-[var(--sf-fg)]">Delivery address</span>
+            <input type="hidden" name="shippingAddress" value={address} />
+
+            <label htmlFor="street" className="text-xs text-[var(--sf-muted)]">Street address</label>
+            <input
+              id="street"
               required
-              rows={2}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="e.g. 15 Main St, Ormeau QLD 4208"
-              className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--sf-primary)]"
+              autoComplete="address-line1"
+              value={street}
+              onChange={(e) => setStreet(e.target.value)}
+              placeholder="e.g. 15 Main St"
+              className="h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 text-sm outline-none focus:border-[var(--sf-primary)]"
             />
-            <p className="text-xs text-[var(--sf-muted)]">
-              Include your street number, suburb, state and postcode for the most accurate delivery fee.
-            </p>
+
+            <div className="grid grid-cols-[2fr_1fr_1fr] gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="suburb" className="text-xs text-[var(--sf-muted)]">Suburb</label>
+                <input
+                  id="suburb"
+                  required
+                  autoComplete="address-level2"
+                  value={suburb}
+                  onChange={(e) => setSuburb(e.target.value)}
+                  placeholder="e.g. Ormeau"
+                  className="h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 text-sm outline-none focus:border-[var(--sf-primary)]"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="addressState" className="text-xs text-[var(--sf-muted)]">State</label>
+                <select
+                  id="addressState"
+                  required
+                  autoComplete="address-level1"
+                  value={addressState}
+                  onChange={(e) => setAddressState(e.target.value)}
+                  className="h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-2 text-sm outline-none focus:border-[var(--sf-primary)]"
+                >
+                  <option value="" disabled>
+                    —
+                  </option>
+                  {AU_STATES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="postcode" className="text-xs text-[var(--sf-muted)]">Postcode</label>
+                <input
+                  id="postcode"
+                  required
+                  autoComplete="postal-code"
+                  inputMode="numeric"
+                  maxLength={4}
+                  pattern="\d{4}"
+                  value={postcode}
+                  onChange={(e) => setPostcode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="4208"
+                  className="h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 text-sm outline-none focus:border-[var(--sf-primary)]"
+                />
+              </div>
+            </div>
+
             {quotePending ? (
               <p className="text-xs text-[var(--sf-muted)]">Calculating delivery fee...</p>
             ) : deliveryQuote?.status === "free" ? (

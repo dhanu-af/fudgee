@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { getCustomerOrderHistory } from "@/modules/customer-account/queries";
 import { ReorderButton } from "@/modules/customer-account/components/reorder-button";
 import { OrderPaymentChooser } from "@/components/storefront/order-payment-chooser";
+import { PaymentProofForm } from "@/components/storefront/payment-proof-form";
 
 type Orders = Awaited<ReturnType<typeof getCustomerOrderHistory>>;
 
@@ -128,7 +129,15 @@ export function OrderHistory({ orders }: { orders: Orders }) {
           ) : (
             order.paymentStatus !== "PAID" && (
               <div className="mt-3 rounded-xl bg-[var(--sf-bg)] p-4 ring-1 ring-[var(--sf-border)]">
-                <OrderPaymentChooser orderId={order.id} total={Number(order.total)} />
+                {order.paymentMethod === "CASH" || order.paymentMethod === "PAYID" ? (
+                  <PaymentProofForm
+                    orderId={order.id}
+                    existingReference={order.paymentReferenceNumber}
+                    existingReceiptUrl={order.paymentReceiptUrl}
+                  />
+                ) : (
+                  <OrderPaymentChooser orderId={order.id} total={Number(order.total)} />
+                )}
               </div>
             )
           )}

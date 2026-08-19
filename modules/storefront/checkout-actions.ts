@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { put } from "@vercel/blob";
 import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
 import { notifyAdmins } from "@/lib/whatsapp";
@@ -516,5 +517,91 @@ export async function resolveOrderPayment(
   revalidatePath("/account");
   revalidatePath(`/sales-orders/${order.id}`);
   revalidatePath("/sales-orders");
+  return { success: true };
+}
+
+const RECEIPT_MAX_BYTES = 5 * 1024 * 1024;
+const RECEIPT_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
+// A customer who paid by bank transfer/PayID outside the site submits proof
+// here (a transfer reference, an uploaded receipt/screenshot, or both) —
+// shown on the order's Operations page so Dhanu can verify the money
+// actually arrived before marking the order PAID by hand. This is evidence
+// for her to check, not itself proof of payment.
+export type PaymentProofState = { error?: string; success?: boolean };
+
+export async function submitPaymentProof(_prev: PaymentProofState, formData: FormData): Promise<PaymentProofState> {
+  const orderId = formData.get("orderId");
+  if (typeof orderId !== "string" || !orderId) return { error: "Order not found." };
+
+  const order = await db.salesOrder.findUnique({ where: { id: orderId } });
+  if (!order) return { error: "Order not found." };
+  if (order.paymentStatus === "PAID") return { error: "This order has already been paid." };
+
+  const referenceRaw = formData.get("referenceNumber");
+  const referenceNumber = typeof referenceRaw === "string" ? referenceRaw.trim() : "";
+
+  const file = formData.get("file");
+  let receiptUrl: string | undefined;
+  if (file instanceof File && file.size > 0) {
+    if (!RECEIPT_ALLOWED_TYPES.includes(file.type)) {
+      return { error: "Please upload a JPEG, PNG, WEBP image, or a PDF." };
+    }
+    if (file.size > RECEIPT_MAX_BYTES) {
+      return { error: "File must be smaller than 5MB." };
+    }
+    try {
+      const blob = await put(`payment-receipts/${crypto.randomUUID()}-${file.name}`, file, { access: "public" });
+      receiptUrl = blob.url;
+    } catch (err) {
+      console.error("Payment receipt upload failed:", err);
+      return { error: "Upload failed — please try again." };
+    }
+  }
+
+  if (!referenceNumber && !receiptUrl) {
+    return { error: "Enter a reference number or upload a receipt." };
+  }
+
+  await db.salesOrder.update({
+    where: { id: order.id },
+    data: {
+      ...(referenceNumber ? { paymentReferenceNumber: referenceNumber } : {}),
+      ...(receiptUrl ? { paymentReceiptUrl: receiptUrl } : {}),
+    },
+  });
+
+  const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
+  const proofNote = [referenceNumber ? `ref: ${referenceNumber}` : null, receiptUrl ? "receipt uploaded" : null]
+    .filter(Boolean)
+    .join(", ");
+
+  if (process.env.ADMIN_WHATSAPP_NUMBER) {
+    try {
+      const results = await notifyAdmins(
+        `🧾 ${orderNumber} — customer submitted payment proof (${proofNote}). Confirm the money arrived before marking it paid.\n${ADMIN_URL}/sales-orders/${order.id}`
+      );
+      for (const r of results) {
+        if (!r.sent) console.error("Payment-proof WhatsApp notification not sent to", r.to, ":", r.error);
+      }
+    } catch (err) {
+      console.error("Failed to send payment-proof WhatsApp notification", err);
+    }
+  }
+  try {
+    const results = await notifyAdminsByEmail(
+      `${orderNumber} — payment proof submitted`,
+      `<p>${orderNumber} — customer submitted payment proof (${proofNote}). Confirm the money arrived before marking it paid.</p>` +
+        (receiptUrl ? `<p><a href="${receiptUrl}">View receipt</a></p>` : "")
+    );
+    for (const r of results) {
+      if (!r.sent) console.error("Payment-proof email not sent to", r.to, ":", r.error);
+    }
+  } catch (err) {
+    console.error("Failed to send payment-proof email", err);
+  }
+
+  revalidatePath("/account");
+  revalidatePath(`/sales-orders/${order.id}`);
   return { success: true };
 }

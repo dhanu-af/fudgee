@@ -39,6 +39,19 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
           {so.paymentPhone && (
             <p className="text-xs text-muted-foreground">Payment contact: {so.paymentPhone}</p>
           )}
+          {(so.paymentReferenceNumber || so.paymentReceiptUrl) && (
+            <p className="text-xs text-muted-foreground">
+              Payment proof:{" "}
+              {so.paymentReferenceNumber && <>ref {so.paymentReferenceNumber}</>}
+              {so.paymentReferenceNumber && so.paymentReceiptUrl && " · "}
+              {so.paymentReceiptUrl && (
+                <a href={so.paymentReceiptUrl} target="_blank" rel="noreferrer" className="text-primary underline">
+                  view receipt
+                </a>
+              )}
+              {" — confirm the money arrived before marking this paid."}
+            </p>
+          )}
           {so.deliveryMethod !== "FUDGEE" && so.deliveryMethod !== "OTHER" && (
             <p className="text-xs text-muted-foreground">
               Delivery: customer arranged their own (

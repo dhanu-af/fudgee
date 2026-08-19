@@ -483,6 +483,13 @@ model SalesOrder {
   // gave at checkout so Dhanu can contact them to arrange/confirm payment.
   // Distinct from Customer.phone, which may be a different number.
   paymentPhone            String?
+  // Customer-submitted proof for a CASH/PAYID order they've since paid
+  // outside the site (bank transfer reference, or an uploaded
+  // receipt/screenshot) — see submitPaymentProof in checkout-actions.ts.
+  // Staff still confirm the money actually arrived before marking PAID;
+  // these are evidence, not proof the order is settled.
+  paymentReferenceNumber  String?
+  paymentReceiptUrl       String?
   stripeCheckoutSessionId String?                 @unique
   stripePaymentIntentId   String?
   // Set alongside paymentStatus flipping to PAID (Stripe webhook, or Finance's

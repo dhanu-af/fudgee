@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { getCustomerOrderHistory } from "@/modules/customer-account/queries";
 import { ReorderButton } from "@/modules/customer-account/components/reorder-button";
+import { OrderPaymentChooser } from "@/components/storefront/order-payment-chooser";
 
 type Orders = Awaited<ReturnType<typeof getCustomerOrderHistory>>;
 
@@ -94,6 +95,46 @@ export function OrderHistory({ orders }: { orders: Orders }) {
               </div>
             ))}
           </div>
+
+          <div className="mt-2 flex flex-col gap-1 text-sm">
+            {order.discountAmount != null && Number(order.discountAmount) > 0 && (
+              <div className="flex items-center justify-between text-[var(--sf-primary)]">
+                <span>Discount{order.discountPercent ? ` (${order.discountPercent}% off)` : ""}</span>
+                <span>−${Number(order.discountAmount).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-[var(--sf-muted)]">
+              <span>Subtotal</span>
+              <span>${Number(order.subtotal).toFixed(2)}</span>
+            </div>
+            {(order.deliveryFee !== null || order.deliveryFeeReason !== null) && (
+              <div className="flex items-center justify-between text-[var(--sf-muted)]">
+                <span>Delivery{order.deliveryFeeReason ? ` (${order.deliveryFeeReason})` : ""}</span>
+                <span>
+                  {order.deliveryFee !== null && Number(order.deliveryFee) > 0
+                    ? `$${Number(order.deliveryFee).toFixed(2)}`
+                    : "FREE"}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between font-semibold text-[var(--sf-fg)]">
+              <span>Total</span>
+              <span>${Number(order.total).toFixed(2)}</span>
+            </div>
+          </div>
+
+          {order.outOfDeliveryRange ? (
+            <p className="mt-3 text-sm text-red-500">
+              This address is outside our standard delivery area — we&apos;re confirming whether delivery is
+              possible and what it will cost. You&apos;ll be able to pay once that&apos;s done.
+            </p>
+          ) : (
+            order.paymentStatus !== "PAID" && (
+              <div className="mt-3 rounded-xl bg-[var(--sf-bg)] p-4 ring-1 ring-[var(--sf-border)]">
+                <OrderPaymentChooser orderId={order.id} total={Number(order.total)} />
+              </div>
+            )
+          )}
 
           <div className="mt-4 rounded-xl bg-[var(--sf-bg)] p-4 ring-1 ring-[var(--sf-border)]">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--sf-muted)]">Shipping</p>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getStorefrontSettings } from "@/modules/storefront/queries";
 import { ClearCartOnMount } from "@/components/storefront/clear-cart-on-mount";
-import { PayNowButton } from "@/components/storefront/pay-now-button";
+import { OrderPaymentChooser } from "@/components/storefront/order-payment-chooser";
 
 export const metadata: Metadata = {
   title: "Order confirmed",
@@ -69,7 +69,7 @@ export default async function CheckoutSuccessPage({
           yourself — no delivery fee has been charged.
         </p>
       )}
-      {canPayNow && order && <PayNowButton orderId={order.id} total={Number(order.total)} />}
+      {canPayNow && order && <OrderPaymentChooser orderId={order.id} total={Number(order.total)} />}
       <Link
         href="/shop"
         className="mt-2 rounded-full bg-[var(--sf-primary)] px-6 py-3 text-sm font-semibold text-[var(--sf-primary-foreground)]"

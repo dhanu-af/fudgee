@@ -403,16 +403,25 @@ export async function submitCheckout(
   redirect(checkoutUrl);
 }
 
-// Lets a customer pay by card for an order that was created UNPAID without
-// ever going through Stripe — cash/PayID orders, or an "Over delivery
-// range" request Dhanu has since quoted a fee for (see setDeliveryFee in
-// modules/sales-orders/actions.ts). Called from the /checkout/success page,
-// which the customer can revisit any time via the same link/order_id.
-export type PayNowFormState = { error?: string };
+// Lets a customer settle an order that's UNPAID without a chosen payment
+// method yet resolving into one — cash/PayID orders that never picked a
+// contact number, or an "Over delivery range" request Dhanu has since
+// quoted a fee for (see setDeliveryFee in modules/sales-orders/actions.ts)
+// and therefore never went through the checkout payment step at all.
+// Called from both /checkout/success and the /account order history card,
+// so a customer can revisit and resolve payment any time via either page.
+export type ResolveOrderPaymentState = { error?: string; success?: boolean };
 
-export async function createPayNowSession(_prev: PayNowFormState, formData: FormData): Promise<PayNowFormState> {
+export async function resolveOrderPayment(
+  _prev: ResolveOrderPaymentState,
+  formData: FormData
+): Promise<ResolveOrderPaymentState> {
   const orderId = formData.get("orderId");
+  const method = formData.get("method");
   if (typeof orderId !== "string" || !orderId) return { error: "Order not found." };
+  if (method !== "card" && method !== "cash" && method !== "payid") {
+    return { error: "Choose a payment method." };
+  }
 
   const order = await db.salesOrder.findUnique({ where: { id: orderId }, include: { customer: true } });
   if (!order) return { error: "Order not found." };
@@ -421,47 +430,91 @@ export async function createPayNowSession(_prev: PayNowFormState, formData: Form
     return { error: "We haven't confirmed delivery for this order yet — we'll be in touch shortly." };
   }
 
-  const headerList = await headers();
-  const proto = headerList.get("x-forwarded-proto") ?? "https";
-  const host = headerList.get("host");
-  const origin = `${proto}://${host}`;
   const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
 
-  let checkoutUrl: string | null;
-  try {
-    // One lump-sum line item for the order's own already-computed total —
-    // re-deriving per-line pricing/discounts/delivery here would just be
-    // re-running submitCheckout's math against data that's already settled.
-    const session = await getStripe().checkout.sessions.create({
-      mode: "payment",
-      customer_email: order.customer.email ?? undefined,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "aud",
-            unit_amount: Math.round(Number(order.total) * 100),
-            product_data: { name: `Fudgee order ${orderNumber}` },
+  if (method === "card") {
+    const headerList = await headers();
+    const proto = headerList.get("x-forwarded-proto") ?? "https";
+    const host = headerList.get("host");
+    const origin = `${proto}://${host}`;
+
+    let checkoutUrl: string | null;
+    try {
+      // One lump-sum line item for the order's own already-computed total
+      // — re-deriving per-line pricing/discounts/delivery here would just
+      // be re-running submitCheckout's math against data already settled.
+      const session = await getStripe().checkout.sessions.create({
+        mode: "payment",
+        customer_email: order.customer.email ?? undefined,
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "aud",
+              unit_amount: Math.round(Number(order.total) * 100),
+              product_data: { name: `Fudgee order ${orderNumber}` },
+            },
           },
-        },
-      ],
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/checkout/success?order_id=${order.id}`,
-      metadata: { salesOrderId: order.id },
-    });
-    checkoutUrl = session.url;
-    await db.salesOrder.update({
-      where: { id: order.id },
-      data: { stripeCheckoutSessionId: session.id },
-    });
+        ],
+        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/checkout/success?order_id=${order.id}`,
+        metadata: { salesOrderId: order.id },
+      });
+      checkoutUrl = session.url;
+      await db.salesOrder.update({
+        where: { id: order.id },
+        data: { stripeCheckoutSessionId: session.id },
+      });
+    } catch (err) {
+      console.error("Failed to create pay-now Stripe session", err);
+      return { error: "We couldn't start payment — please try again in a moment." };
+    }
+
+    if (!checkoutUrl) {
+      return { error: "We couldn't start payment — please try again in a moment." };
+    }
+    redirect(checkoutUrl);
+  }
+
+  // cash / payid — no Stripe involved, just record how Dhanu should reach
+  // the customer to actually collect payment.
+  const phoneRaw = formData.get("paymentPhone");
+  const phone = typeof phoneRaw === "string" ? phoneRaw.trim() : "";
+  if (!phone) return { error: "A mobile number is required for Cash or PayID payment." };
+
+  const paymentMethod = method === "cash" ? "CASH" : "PAYID";
+  const methodLabel = method === "cash" ? "Cash" : "PayID";
+  await db.salesOrder.update({
+    where: { id: order.id },
+    data: { paymentMethod, paymentPhone: phone },
+  });
+
+  if (process.env.ADMIN_WHATSAPP_NUMBER) {
+    try {
+      const results = await notifyAdmins(
+        `💳 ${orderNumber} — customer chose ${methodLabel}, contact ${phone} to arrange/confirm payment\n${ADMIN_URL}/sales-orders/${order.id}`
+      );
+      for (const r of results) {
+        if (!r.sent) console.error("Payment-method-chosen WhatsApp notification not sent to", r.to, ":", r.error);
+      }
+    } catch (err) {
+      console.error("Failed to send payment-method-chosen WhatsApp notification", err);
+    }
+  }
+  try {
+    const results = await notifyAdminsByEmail(
+      `${orderNumber} — customer chose ${methodLabel} payment`,
+      `<p>${orderNumber} — customer chose ${methodLabel}, contact ${phone} to arrange/confirm payment.</p>`
+    );
+    for (const r of results) {
+      if (!r.sent) console.error("Payment-method-chosen email not sent to", r.to, ":", r.error);
+    }
   } catch (err) {
-    console.error("Failed to create pay-now Stripe session", err);
-    return { error: "We couldn't start payment — please try again in a moment." };
+    console.error("Failed to send payment-method-chosen email", err);
   }
 
-  if (!checkoutUrl) {
-    return { error: "We couldn't start payment — please try again in a moment." };
-  }
-
-  redirect(checkoutUrl);
+  revalidatePath("/account");
+  revalidatePath(`/sales-orders/${order.id}`);
+  revalidatePath("/sales-orders");
+  return { success: true };
 }

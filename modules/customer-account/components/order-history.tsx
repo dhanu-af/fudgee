@@ -71,19 +71,16 @@ export function OrderHistory({ orders }: { orders: Orders }) {
             </div>
           </div>
 
-          {/* Two separate "order is done" paths exist: the manual "Mark as
-              Fulfilled" shortcut (DRAFT/CONFIRMED -> FULFILLED) and the
-              tracked Shipping flow, which cascades to DELIVERED instead
-              (see TRACKING_STATUS_CASCADE in modules/shipping/actions.ts) —
-              the invoice needs to appear for either. */}
-          {(order.status === "FULFILLED" || order.status === "DELIVERED") && (
-            <Link
-              href={`/account/orders/${order.id}/invoice`}
-              className="mt-2 inline-block text-sm font-semibold text-[var(--sf-primary)] hover:underline"
-            >
-              View / Print Invoice →
-            </Link>
-          )}
+          {/* Shown regardless of status — same as the Operations sales-order
+              page, which never gates its own "View / Print Invoice" button
+              on fulfillment. getCustomerOrderById has no status filter
+              either, so the page behind this link always works. */}
+          <Link
+            href={`/account/orders/${order.id}/invoice`}
+            className="mt-2 inline-block text-sm font-semibold text-[var(--sf-primary)] hover:underline"
+          >
+            View / Print Invoice →
+          </Link>
 
           <div className="mt-4 flex flex-col divide-y divide-[var(--sf-border)]">
             {order.lines.map((line) => (

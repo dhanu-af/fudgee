@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { contactMessageSchema, newsletterSignupSchema, productReviewSchema } from "@/modules/storefront/schema";
 import { notifyAdmins } from "@/lib/whatsapp";
+import { notifyAdminsByEmail, contactMessageEmailHtml } from "@/lib/email";
 import { ADMIN_URL } from "@/lib/site-config";
 
 // Every action in this file is called by an unauthenticated site visitor —
@@ -43,6 +44,21 @@ export async function submitContactMessage(_prev: ContactFormState, formData: Fo
     } catch (err) {
       console.error("Failed to send contact message WhatsApp notification", err);
     }
+  }
+
+  // Same best-effort shape, mirroring the order-notification emails —
+  // gives Dhanu a copy of every contact message in her Fudgee inbox
+  // (ADMIN_EMAIL), not just the admin panel's Messages tab.
+  try {
+    const results = await notifyAdminsByEmail(
+      `New contact message from ${parsed.data.name}`,
+      contactMessageEmailHtml(parsed.data)
+    );
+    for (const r of results) {
+      if (!r.sent) console.error("Contact message email not sent to", r.to, ":", r.error);
+    }
+  } catch (err) {
+    console.error("Failed to send contact message email", err);
   }
 
   return { success: true };

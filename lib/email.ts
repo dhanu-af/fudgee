@@ -44,6 +44,22 @@ export function orderNotificationEmailHtml(args: {
   `;
 }
 
+// Shared body for the contact-form notification email (public-actions.ts's
+// submitContactMessage) — same shape/tone as orderNotificationEmailHtml
+// above, just for a different event.
+export function contactMessageEmailHtml(args: { name: string; email: string; phone?: string; message: string }): string {
+  const { name, email, phone, message } = args;
+  return `
+    <div style="font-family: sans-serif; font-size: 15px; color: #3e1f1a;">
+      <p style="font-size: 17px; font-weight: 600;">📩 New contact message</p>
+      <p>
+        <strong>${name}</strong> — <a href="mailto:${email}" style="color: #9372c8;">${email}</a>${phone ? ` — ${phone}` : ""}
+      </p>
+      <p style="white-space: pre-wrap;">${message}</p>
+    </div>
+  `;
+}
+
 export type AdminEmailResult = { to: string; sent: boolean; error?: string };
 
 // ADMIN_EMAIL may hold one address or a comma-separated list, same

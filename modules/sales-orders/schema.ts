@@ -23,3 +23,8 @@ export const salesOrderSchema = z.object({
 
 export type SalesOrderLineInput = z.infer<typeof salesOrderLineSchema>;
 export type SalesOrderInput = z.infer<typeof salesOrderSchema>;
+
+export const deliveryFeeSchema = z.object({
+  deliveryFee: z.coerce.number().min(0, "Must be 0 or greater"),
+});
+export type DeliveryFeeInput = z.infer<typeof deliveryFeeSchema>;

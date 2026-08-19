@@ -6,6 +6,7 @@ import { can } from "@/lib/rbac/can";
 import { getSalesOrderById } from "@/modules/sales-orders/queries";
 import { deleteSalesOrder } from "@/modules/sales-orders/actions";
 import { SalesOrderStatusActions } from "@/modules/sales-orders/components/sales-order-status-actions";
+import { DeliveryFeeForm } from "@/modules/sales-orders/components/delivery-fee-form";
 import { DeleteRowButton } from "@/components/data-table/delete-row-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -128,6 +129,12 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
           <span>{String(so.total)}</span>
         </div>
       </div>
+
+      {can(session, PERMISSIONS.SALES_ORDERS_WRITE) &&
+        so.paymentStatus !== "PAID" &&
+        (so.outOfDeliveryRange || so.paymentMethod !== "OTHER") && (
+          <DeliveryFeeForm id={so.id} currentFee={so.deliveryFee !== null ? Number(so.deliveryFee) : null} />
+        )}
 
       {so.notes && (
         <div className="flex flex-col gap-1">

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getStorefrontSettings } from "@/modules/storefront/queries";
 import { ClearCartOnMount } from "@/components/storefront/clear-cart-on-mount";
+import { PayNowButton } from "@/components/storefront/pay-now-button";
 
 export const metadata: Metadata = {
   title: "Order confirmed",
@@ -31,7 +32,12 @@ export default async function CheckoutSuccessPage({
       ? await db.salesOrder.findUnique({ where: { id: order_id } })
       : null;
 
+  const isPaid = order?.paymentStatus === "PAID";
   const isManualPayment = order?.paymentMethod === "CASH" || order?.paymentMethod === "PAYID";
+  // A former "Over delivery range" order, once Dhanu has quoted a fee (see
+  // setDeliveryFee), lands here too — same as any other unpaid order, it
+  // just gets a Pay Now option instead of staying blocked.
+  const canPayNow = !!order && !isPaid && !order.outOfDeliveryRange;
   const settings = isManualPayment ? await getStorefrontSettings() : null;
   const paymentInstructions =
     order?.paymentMethod === "PAYID" ? settings?.payIdDetails : order?.paymentMethod === "CASH" ? settings?.cashInstructions : null;
@@ -43,17 +49,20 @@ export default async function CheckoutSuccessPage({
         {order?.outOfDeliveryRange ? "📨" : "🎉"}
       </span>
       <h1 className="font-display text-3xl font-semibold text-[var(--sf-fg)]">
-        {order?.outOfDeliveryRange ? "Request received!" : isManualPayment ? "Order placed!" : "Payment received!"}
+        {order?.outOfDeliveryRange ? "Request received!" : isPaid ? "Payment received!" : "Order placed!"}
       </h1>
       <p className="text-[var(--sf-muted)]">
         Thank you{order ? <> — your order <strong>#{order.seq}</strong></> : null}
         {order?.outOfDeliveryRange
           ? " is outside our standard delivery area, so we haven't charged anything yet. We'll contact you shortly to confirm whether delivery is possible and what it would cost."
-          : isManualPayment
-            ? ` has been placed. We'll contact you shortly to arrange ${order?.paymentMethod === "PAYID" ? "PayID" : "cash"} payment and delivery.`
-            : " has been paid and sent through. We'll be in touch shortly to arrange delivery."}
+          : isPaid
+            ? " has been paid and sent through. We'll be in touch shortly to arrange delivery."
+            : isManualPayment
+              ? ` has been placed — total $${Number(order.total).toFixed(2)}. We'll contact you shortly to arrange ${order?.paymentMethod === "PAYID" ? "PayID" : "cash"} payment, or pay securely by card below.`
+              : ` is ready for payment — total $${order ? Number(order.total).toFixed(2) : ""}.`}
       </p>
       {paymentInstructions && <p className="text-[var(--sf-muted)]">{paymentInstructions}</p>}
+      {canPayNow && order && <PayNowButton orderId={order.id} total={Number(order.total)} />}
       <Link
         href="/shop"
         className="mt-2 rounded-full bg-[var(--sf-primary)] px-6 py-3 text-sm font-semibold text-[var(--sf-primary-foreground)]"

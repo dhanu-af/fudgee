@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/rbac/guards";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
-import { salesOrderSchema, salesOrderLineSchema } from "@/modules/sales-orders/schema";
+import { gstComponent } from "@/lib/storefront/gst";
+import { salesOrderSchema, salesOrderLineSchema, deliveryFeeSchema } from "@/modules/sales-orders/schema";
 
 export type SalesOrderFormState = { error?: string };
 
@@ -137,6 +138,49 @@ export async function cancelSalesOrder(
   await requirePermission(PERMISSIONS.SALES_ORDERS_WRITE);
   await db.salesOrder.update({ where: { id }, data: { status: "CANCELLED" } });
   revalidatePath(`/sales-orders/${id}`);
+  return {};
+}
+
+// Manually quotes/updates the delivery fee on an existing order — built for
+// the "Over delivery range" flow (checkout-actions.ts's submitCheckout),
+// where the customer's address was too far to price automatically, but
+// works on any order. Recomputes total/gstAmount off the order's own
+// subtotal (never re-derives from line items, since discounts etc. are
+// already baked into subtotal) and clears outOfDeliveryRange — setting a
+// fee IS Dhanu confirming delivery is possible, so the "pending
+// confirmation" flag no longer applies once she's done this.
+export async function setDeliveryFee(
+  id: string,
+  _prev: SalesOrderActionState,
+  formData: FormData
+): Promise<SalesOrderActionState> {
+  await requirePermission(PERMISSIONS.SALES_ORDERS_WRITE);
+
+  const parsed = deliveryFeeSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  const order = await db.salesOrder.findUnique({ where: { id } });
+  if (!order) return { error: "Order not found." };
+
+  const fee = parsed.data.deliveryFee;
+  const total = Number(order.subtotal) + fee;
+
+  await db.salesOrder.update({
+    where: { id },
+    data: {
+      deliveryFee: fee > 0 ? fee : null,
+      deliveryFeeReason: fee > 0 ? "Manually quoted by Fudgee" : null,
+      total,
+      gstAmount: gstComponent(total),
+      outOfDeliveryRange: false,
+    },
+  });
+
+  // No revalidatePath for /checkout/success needed — it's already
+  // force-dynamic (see that page), so it never serves a cached total.
+  revalidatePath(`/sales-orders/${id}`);
+  revalidatePath(`/sales-orders/${id}/invoice`);
+  revalidatePath("/sales-orders");
   return {};
 }
 

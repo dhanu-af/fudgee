@@ -367,3 +367,66 @@ export async function submitCheckout(
 
   redirect(checkoutUrl);
 }
+
+// Lets a customer pay by card for an order that was created UNPAID without
+// ever going through Stripe — cash/PayID orders, or an "Over delivery
+// range" request Dhanu has since quoted a fee for (see setDeliveryFee in
+// modules/sales-orders/actions.ts). Called from the /checkout/success page,
+// which the customer can revisit any time via the same link/order_id.
+export type PayNowFormState = { error?: string };
+
+export async function createPayNowSession(_prev: PayNowFormState, formData: FormData): Promise<PayNowFormState> {
+  const orderId = formData.get("orderId");
+  if (typeof orderId !== "string" || !orderId) return { error: "Order not found." };
+
+  const order = await db.salesOrder.findUnique({ where: { id: orderId }, include: { customer: true } });
+  if (!order) return { error: "Order not found." };
+  if (order.paymentStatus === "PAID") return { error: "This order has already been paid." };
+  if (order.outOfDeliveryRange) {
+    return { error: "We haven't confirmed delivery for this order yet — we'll be in touch shortly." };
+  }
+
+  const headerList = await headers();
+  const proto = headerList.get("x-forwarded-proto") ?? "https";
+  const host = headerList.get("host");
+  const origin = `${proto}://${host}`;
+  const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
+
+  let checkoutUrl: string | null;
+  try {
+    // One lump-sum line item for the order's own already-computed total —
+    // re-deriving per-line pricing/discounts/delivery here would just be
+    // re-running submitCheckout's math against data that's already settled.
+    const session = await getStripe().checkout.sessions.create({
+      mode: "payment",
+      customer_email: order.customer.email ?? undefined,
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "aud",
+            unit_amount: Math.round(Number(order.total) * 100),
+            product_data: { name: `Fudgee order ${orderNumber}` },
+          },
+        },
+      ],
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/checkout/success?order_id=${order.id}`,
+      metadata: { salesOrderId: order.id },
+    });
+    checkoutUrl = session.url;
+    await db.salesOrder.update({
+      where: { id: order.id },
+      data: { stripeCheckoutSessionId: session.id },
+    });
+  } catch (err) {
+    console.error("Failed to create pay-now Stripe session", err);
+    return { error: "We couldn't start payment — please try again in a moment." };
+  }
+
+  if (!checkoutUrl) {
+    return { error: "We couldn't start payment — please try again in a moment." };
+  }
+
+  redirect(checkoutUrl);
+}

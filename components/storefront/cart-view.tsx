@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
 import Image from "next/image";
 import { useCart } from "@/lib/storefront/cart-context";
-import { createStripeCheckout, getDeliveryQuoteAction } from "@/modules/storefront/checkout-actions";
+import { submitCheckout, getDeliveryQuoteAction } from "@/modules/storefront/checkout-actions";
 import type { DeliveryQuote } from "@/lib/storefront/delivery";
 import { applyPromoCode } from "@/modules/customers/actions";
 import { gstComponent, applyDiscount } from "@/lib/storefront/gst";
@@ -15,7 +15,7 @@ type DiscountTier = { title: string; discountPercent: number; minimumSpend: numb
 
 export function CartView({ discounts }: { discounts: DiscountTier[] }) {
   const { items, updateQuantity, removeItem, subtotal } = useCart();
-  const [state, formAction, pending] = useActionState(createStripeCheckout, {});
+  const [state, formAction, pending] = useActionState(submitCheckout, {});
   const [showCheckout, setShowCheckout] = useState(false);
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [promoState, promoFormAction, promoPending] = useActionState(applyPromoCode, {});
@@ -25,6 +25,8 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
   const [postcode, setPostcode] = useState("");
   const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
   const [quotePending, setQuotePending] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "payid">("card");
+  const [paymentPhone, setPaymentPhone] = useState("");
 
   // Combined into the single free-text string checkout-actions.ts (and the
   // Customer/SalesOrder shippingAddress columns) have always expected —
@@ -232,13 +234,16 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
           onClick={() => setShowCheckout(true)}
           className="mt-6 w-full rounded-full bg-[var(--sf-primary)] py-4 text-center text-base font-semibold text-[var(--sf-primary-foreground)] shadow-md shadow-[var(--sf-primary)]/20 transition-transform hover:scale-[1.02]"
         >
-          Pay Now
+          Checkout
         </button>
       ) : (
         <form action={formAction} className="mt-8 flex flex-col gap-4 rounded-3xl bg-[var(--sf-card)] p-6 ring-1 ring-[var(--sf-border)]">
           <h2 className="font-display text-xl font-semibold text-[var(--sf-fg)]">Your details</h2>
           <p className="text-sm text-[var(--sf-muted)]">
-            We&apos;ll pass these on to our delivery team. You&apos;ll pay securely by card on the next step.
+            We&apos;ll pass these on to our delivery team.
+            {paymentMethod === "card"
+              ? " You'll pay securely by card on the next step."
+              : " We'll contact you to arrange payment."}
           </p>
 
           <input
@@ -354,6 +359,45 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
             <textarea id="notes" name="notes" rows={2} placeholder="Delivery instructions, allergies, gift message..." className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--sf-primary)]" />
           </div>
 
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-[var(--sf-fg)]">Payment method</span>
+            <input type="hidden" name="paymentMethod" value={paymentMethod} />
+            <div className="grid grid-cols-3 gap-2">
+              {(["card", "cash", "payid"] as const).map((method) => (
+                <button
+                  key={method}
+                  type="button"
+                  onClick={() => setPaymentMethod(method)}
+                  className={`h-11 rounded-xl border text-sm font-medium transition-colors ${
+                    paymentMethod === method
+                      ? "border-[var(--sf-primary)] bg-[var(--sf-primary-soft)] text-[var(--sf-fg)]"
+                      : "border-[var(--sf-border)] bg-[var(--sf-bg)] text-[var(--sf-muted)]"
+                  }`}
+                >
+                  {method === "card" ? "Card" : method === "cash" ? "Cash" : "PayID"}
+                </button>
+              ))}
+            </div>
+            {paymentMethod !== "card" && (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="paymentPhone" className="text-xs text-[var(--sf-muted)]">
+                  Mobile number (so we can arrange {paymentMethod === "cash" ? "cash" : "PayID"} payment)
+                </label>
+                <input
+                  id="paymentPhone"
+                  name="paymentPhone"
+                  required
+                  type="tel"
+                  autoComplete="tel"
+                  value={paymentPhone}
+                  onChange={(e) => setPaymentPhone(e.target.value)}
+                  placeholder="04XX XXX XXX"
+                  className="h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 text-sm outline-none focus:border-[var(--sf-primary)]"
+                />
+              </div>
+            )}
+          </div>
+
           {state.error && <p className="text-sm text-red-500">{state.error}</p>}
 
           <button
@@ -362,10 +406,14 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
             className="mt-2 rounded-full bg-[var(--sf-primary)] py-4 text-center text-base font-semibold text-[var(--sf-primary-foreground)] shadow-md shadow-[var(--sf-primary)]/20 transition-transform hover:scale-[1.02] disabled:opacity-60"
           >
             {pending
-              ? "Redirecting to payment..."
+              ? paymentMethod === "card"
+                ? "Redirecting to payment..."
+                : "Placing order..."
               : blockedByDelivery
                 ? "Delivery unavailable for this address"
-                : `Pay now — $${grandTotal.toFixed(2)}`}
+                : paymentMethod === "card"
+                  ? `Pay now — $${grandTotal.toFixed(2)}`
+                  : `Place order — $${grandTotal.toFixed(2)}`}
           </button>
         </form>
       )}

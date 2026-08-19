@@ -35,10 +35,18 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
               Ship to: {so.shippingAddress || so.customer.shippingAddress}
             </p>
           )}
+          {so.paymentPhone && (
+            <p className="text-xs text-muted-foreground">Payment contact: {so.paymentPhone}</p>
+          )}
         </div>
         <div className="flex gap-2">
           <Badge>{so.status}</Badge>
           <Badge variant={so.paymentStatus === "PAID" ? "default" : "secondary"}>{so.paymentStatus}</Badge>
+          {so.paymentMethod !== "OTHER" && (
+            <Badge variant="outline">
+              {so.paymentMethod === "STRIPE" ? "Card" : so.paymentMethod === "CASH" ? "Cash" : "PayID"}
+            </Badge>
+          )}
         </div>
       </div>
 

@@ -162,6 +162,8 @@ export const storefrontSettingsSchema = z.object({
   estimatedDeliveryTime: optionalText(200),
   courierName: optionalText(200),
   originAddress: optionalText(500),
+  payIdDetails: optionalText(300),
+  cashInstructions: optionalText(300),
 });
 export type StorefrontSettingsInput = z.infer<typeof storefrontSettingsSchema>;
 
@@ -234,6 +236,16 @@ export const checkoutSchema = z.object({
   notes: z.string().max(1000).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
   linesJson: z.string().min(1),
   promoCode: z.string().max(30).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
+  // "card" pays immediately through Stripe (the only path that existed
+  // before); "cash"/"payid" create the order UNPAID and skip Stripe
+  // entirely — Dhanu arranges/confirms payment with the customer directly.
+  paymentMethod: z.enum(["card", "cash", "payid"]).default("card"),
+  // Required only for cash/payid (checked below) — the number Dhanu
+  // contacts to arrange payment, which may differ from `phone` above.
+  paymentPhone: z.string().max(50).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
+}).refine((data) => data.paymentMethod === "card" || !!data.paymentPhone, {
+  message: "A mobile number is required for Cash or PayID payment.",
+  path: ["paymentPhone"],
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 

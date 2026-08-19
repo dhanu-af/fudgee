@@ -40,6 +40,11 @@ export default async function SalesOrderInvoicePage({ params }: { params: Promis
             <p className="text-3xl font-bold tracking-tight text-primary">INVOICE</p>
             <p className="mt-2 text-muted-foreground">Invoice No. {invoiceNumber}</p>
             <p className="text-muted-foreground">Date: {new Date(order.orderDate).toLocaleDateString()}</p>
+            {order.paymentMethod !== "OTHER" && (
+              <p className="text-muted-foreground">
+                Payment: {order.paymentMethod === "STRIPE" ? "Card" : order.paymentMethod === "CASH" ? "Cash" : "PayID"}
+              </p>
+            )}
           </div>
         </div>
 

@@ -399,6 +399,19 @@ enum SalesOrderPaymentStatus {
   REFUNDED
 }
 
+// STRIPE = paid by card through the storefront's Stripe Checkout (the only
+// path that ever sets stripeCheckoutSessionId). CASH/PAYID = customer chose
+// to arrange payment directly with Dhanu at checkout — order is created
+// UNPAID either way; staff mark it PAID by hand once the cash/transfer is
+// actually received. OTHER is the default for admin-created orders, which
+// have never captured a payment method — not a real "how they paid" claim.
+enum SalesOrderPaymentMethod {
+  STRIPE
+  CASH
+  PAYID
+  OTHER
+}
+
 model SalesOrder {
   id                      String                  @id @default(cuid())
   // @unique added so a manually-entered order number (see createSalesOrder)
@@ -441,6 +454,11 @@ model SalesOrder {
   // label, or null if no delivery fee was charged/applicable.
   deliveryFeeReason       String?
   paymentStatus           SalesOrderPaymentStatus @default(UNPAID)
+  paymentMethod           SalesOrderPaymentMethod @default(OTHER)
+  // Only set when paymentMethod is CASH or PAYID — the number the customer
+  // gave at checkout so Dhanu can contact them to arrange/confirm payment.
+  // Distinct from Customer.phone, which may be a different number.
+  paymentPhone            String?
   stripeCheckoutSessionId String?                 @unique
   stripePaymentIntentId   String?
   // Set alongside paymentStatus flipping to PAID (Stripe webhook, or Finance's
@@ -762,6 +780,14 @@ model StorefrontSettings {
   originAddress String?
   originLat     Decimal? @db.Decimal(9, 6)
   originLng     Decimal? @db.Decimal(9, 6)
+
+  // --- Alternative payment instructions — shown to the customer on the
+  // order-confirmation page when they choose Cash or PayID at checkout
+  // instead of paying by card through Stripe (see checkout-actions.ts).
+  // Free text, blank until Dhanu fills it in — never fabricated (same
+  // principle as legalBusinessName/abn above).
+  payIdDetails      String?
+  cashInstructions  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

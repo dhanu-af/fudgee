@@ -30,14 +30,17 @@ export async function getDeliveryQuoteAction(
 
 // An unauthenticated entry point — re-derives everything from the database
 // (prices, stock status, discount eligibility) and never trusts a
-// client-submitted price or product id.
+// client-submitted price or product id. Despite the name, this doesn't
+// always talk to Stripe: paymentMethod "cash"/"payid" creates the order
+// UNPAID and skips Stripe entirely, redirecting straight to the
+// confirmation page instead.
 
-export type StripeCheckoutFormState = { error?: string };
+export type CheckoutFormState = { error?: string };
 
-export async function createStripeCheckout(
-  _prev: StripeCheckoutFormState,
+export async function submitCheckout(
+  _prev: CheckoutFormState,
   formData: FormData
-): Promise<StripeCheckoutFormState> {
+): Promise<CheckoutFormState> {
   const parsed = checkoutSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please check your details and try again." };
@@ -167,7 +170,14 @@ export async function createStripeCheckout(
     });
   }
 
-  const notesParts = ["Placed via website storefront (Stripe checkout)."];
+  const paymentMethod =
+    parsed.data.paymentMethod === "card" ? "STRIPE" : parsed.data.paymentMethod === "cash" ? "CASH" : "PAYID";
+  const paymentMethodLabel = paymentMethod === "STRIPE" ? "card" : paymentMethod === "CASH" ? "Cash" : "PayID";
+
+  const notesParts = [`Placed via website storefront (${paymentMethodLabel}).`];
+  if (paymentMethod !== "STRIPE") {
+    notesParts.push(`Contact ${parsed.data.paymentPhone} to arrange/confirm ${paymentMethodLabel} payment.`);
+  }
   if (parsed.data.notes) notesParts.push(`Customer note: ${parsed.data.notes}`);
   if (deliveryQuote.status === "unknown") {
     notesParts.push(`⚠ Delivery fee could not be calculated automatically (${deliveryQuote.reason}) — confirm with customer.`);
@@ -192,6 +202,8 @@ export async function createStripeCheckout(
       discountAmount: discountAmount > 0 ? discountAmount : null,
       deliveryFee: deliveryFee > 0 ? deliveryFee : null,
       deliveryFeeReason,
+      paymentMethod,
+      paymentPhone: paymentMethod === "STRIPE" ? null : parsed.data.paymentPhone,
       lines: {
         create: lines.map(({ productId, quantity, unitPrice, lineTotal, unitCostAtSale }) => ({
           productId,
@@ -213,8 +225,12 @@ export async function createStripeCheckout(
   if (process.env.ADMIN_WHATSAPP_NUMBER) {
     try {
       const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
+      const paymentNote =
+        paymentMethod === "STRIPE"
+          ? "payment pending"
+          : `wants to pay by ${paymentMethodLabel} — contact ${parsed.data.paymentPhone}`;
       const message =
-        `🛒 New order ${orderNumber} from ${customer.name} — $${Number(order.total).toFixed(2)} AUD (payment pending)\n` +
+        `🛒 New order ${orderNumber} from ${customer.name} — $${Number(order.total).toFixed(2)} AUD (${paymentNote})\n` +
         `${ADMIN_URL}/sales-orders/${order.id}`;
       const results = await notifyAdmins(message);
       for (const r of results) {
@@ -242,6 +258,16 @@ export async function createStripeCheckout(
     }
   } catch (err) {
     console.error("Failed to send order-placed email", err);
+  }
+
+  // Cash/PayID never touches Stripe — the order already exists (UNPAID,
+  // with the customer's contact number recorded above), so there's nothing
+  // left to do but send them to the confirmation page. Dhanu marks the
+  // order PAID by hand once she's actually received the money.
+  if (paymentMethod !== "STRIPE") {
+    revalidatePath("/sales-orders");
+    revalidatePath("/customers");
+    redirect(`/checkout/success?order_id=${order.id}`);
   }
 
   const headerList = await headers();

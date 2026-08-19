@@ -43,7 +43,7 @@ async function findSuburbOverride(suburb: string | undefined, postcode: string |
 
 // Central pricing engine — both the live checkout preview (see
 // getDeliveryQuoteAction in checkout-actions.ts) and the authoritative
-// server-side charge (createStripeCheckout, same file) call this exact
+// server-side charge (submitCheckout, same file) call this exact
 // function, so the two can never disagree about what a customer is charged.
 // suburb/postcode are optional — pass them whenever the caller has them
 // (the checkout form's own separate boxes) so a DeliverySuburbOverride can

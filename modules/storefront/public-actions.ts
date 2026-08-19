@@ -12,9 +12,9 @@ import { ADMIN_URL } from "@/lib/site-config";
 // strictly and nothing here ever trusts client-submitted prices or product
 // data beyond an id to look up.
 //
-// Checkout itself lives in checkout-actions.ts (createStripeCheckout), which
-// re-prices the same way but creates a Stripe Checkout Session instead of an
-// unpaid order request.
+// Checkout itself lives in checkout-actions.ts (submitCheckout), which
+// re-prices the same way but creates a Stripe Checkout Session (card) or an
+// unpaid order request (cash/PayID) instead.
 
 export type ContactFormState = { error?: string; success?: boolean };
 

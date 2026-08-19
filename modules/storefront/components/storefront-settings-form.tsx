@@ -42,6 +42,8 @@ type StorefrontSettings = {
   originAddress: string | null;
   originLat: unknown;
   originLng: unknown;
+  payIdDetails: string | null;
+  cashInstructions: string | null;
 } | null;
 
 export function StorefrontSettingsForm({ settings }: { settings: StorefrontSettings }) {
@@ -177,6 +179,33 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
             name="courierName"
             placeholder="e.g. Australia Post"
             defaultValue={settings?.courierName ?? ""}
+          />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold tracking-tight">Alternative payment methods</h2>
+        <p className="text-xs text-muted-foreground">
+          Shown to a customer on their order-confirmation page when they choose Cash or PayID at checkout instead of
+          paying by card. Leave blank and that payment option still works — the customer just won&apos;t see any
+          extra instructions, so fill these in before relying on either option.
+        </p>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="payIdDetails">PayID details</Label>
+          <Input
+            id="payIdDetails"
+            name="payIdDetails"
+            placeholder="e.g. Send PayID payment to 0400 000 000 (Fudgee)"
+            defaultValue={settings?.payIdDetails ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="cashInstructions">Cash instructions</Label>
+          <Input
+            id="cashInstructions"
+            name="cashInstructions"
+            placeholder="e.g. Please have exact change ready on delivery"
+            defaultValue={settings?.cashInstructions ?? ""}
           />
         </div>
       </section>

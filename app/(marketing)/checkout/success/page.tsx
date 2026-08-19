@@ -62,6 +62,13 @@ export default async function CheckoutSuccessPage({
               : ` is ready for payment — total $${order ? Number(order.total).toFixed(2) : ""}.`}
       </p>
       {paymentInstructions && <p className="text-[var(--sf-muted)]">{paymentInstructions}</p>}
+      {order && order.deliveryMethod !== "FUDGEE" && order.deliveryMethod !== "OTHER" && (
+        <p className="text-[var(--sf-muted)]">
+          You&apos;re arranging{" "}
+          {order.deliveryMethod === "CUSTOMER_ARRANGED" ? "pickup/delivery" : order.deliveryMethod === "UBER" ? "Uber" : "a courier"}{" "}
+          yourself — no delivery fee has been charged.
+        </p>
+      )}
       {canPayNow && order && <PayNowButton orderId={order.id} total={Number(order.total)} />}
       <Link
         href="/shop"

@@ -248,6 +248,11 @@ export const checkoutSchema = z.object({
   // below entirely, since payment can't be arranged until Dhanu manually
   // confirms delivery is even possible (see submitCheckout).
   outOfRangeRequest: z.coerce.boolean().optional(),
+  // "fudgee" runs the automatic distance/zone pricing exactly as before;
+  // the other three mean the customer is getting it from Fudgee to
+  // themselves their own way — no distance calculation runs, no delivery
+  // fee is ever charged (see submitCheckout).
+  deliveryMethod: z.enum(["fudgee", "customer_arranged", "uber", "courier"]).default("fudgee"),
 }).refine((data) => data.outOfRangeRequest || data.paymentMethod === "card" || !!data.paymentPhone, {
   message: "A mobile number is required for Cash or PayID payment.",
   path: ["paymentPhone"],

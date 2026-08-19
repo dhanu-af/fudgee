@@ -10,6 +10,7 @@ export type SalesOrderRow = {
   status: string;
   paymentStatus: string;
   paymentMethod: string;
+  deliveryMethod: string;
   outOfDeliveryRange: boolean;
   orderDate: Date;
   total: unknown;
@@ -34,6 +35,14 @@ const paymentMethodLabel: Record<string, string> = {
   STRIPE: "Card",
   CASH: "Cash",
   PAYID: "PayID",
+  OTHER: "—",
+};
+
+const deliveryMethodLabel: Record<string, string> = {
+  FUDGEE: "Fudgee",
+  CUSTOMER_ARRANGED: "Customer arranged",
+  UBER: "Uber",
+  COURIER: "Courier",
   OTHER: "—",
 };
 
@@ -78,6 +87,11 @@ export const salesOrderColumns: ColumnDef<SalesOrderRow>[] = [
       ) : (
         paymentMethodLabel[row.original.paymentMethod] ?? row.original.paymentMethod
       ),
+  },
+  {
+    accessorKey: "deliveryMethod",
+    header: "Delivery",
+    cell: ({ row }) => deliveryMethodLabel[row.original.deliveryMethod] ?? row.original.deliveryMethod,
   },
   { accessorKey: "total", header: "Total", cell: ({ row }) => String(row.original.total) },
 ];

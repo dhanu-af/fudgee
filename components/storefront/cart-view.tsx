@@ -27,6 +27,7 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
   const [quotePending, setQuotePending] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "payid">("card");
   const [paymentPhone, setPaymentPhone] = useState("");
+  const [deliveryMethod, setDeliveryMethod] = useState<"fudgee" | "customer_arranged" | "uber" | "courier">("fudgee");
 
   // Combined into the single free-text string checkout-actions.ts (and the
   // Customer/SalesOrder shippingAddress columns) have always expected —
@@ -62,7 +63,10 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
   // actually charge, via getDeliveryQuoteAction, so this preview can never
   // show a different fee than what checkout will really charge.
   useEffect(() => {
-    if (!address.trim()) {
+    // Customer-arranged/Uber/courier never runs the pricing engine at all —
+    // no address to geocode, no fee to charge — mirrors submitCheckout's
+    // server-side branch exactly.
+    if (deliveryMethod !== "fudgee" || !address.trim()) {
       setDeliveryQuote(null);
       setQuotePending(false);
       return;
@@ -81,7 +85,7 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
         .finally(() => setQuotePending(false));
     }, 700);
     return () => clearTimeout(timer);
-  }, [address, discountedSubtotal, suburb, postcode]);
+  }, [address, discountedSubtotal, suburb, postcode, deliveryMethod]);
 
   const deliveryFee = deliveryQuote?.status === "charged" ? deliveryQuote.fee : 0;
   const grandTotal = discountedSubtotal + deliveryFee;
@@ -269,6 +273,40 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
             <label htmlFor="phone" className="text-sm font-medium text-[var(--sf-fg)]">Phone (optional)</label>
             <input id="phone" name="phone" className="h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 text-sm outline-none focus:border-[var(--sf-primary)]" />
           </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-[var(--sf-fg)]">Delivery method</span>
+            <input type="hidden" name="deliveryMethod" value={deliveryMethod} />
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {(["fudgee", "customer_arranged", "uber", "courier"] as const).map((method) => (
+                <button
+                  key={method}
+                  type="button"
+                  onClick={() => setDeliveryMethod(method)}
+                  className={`h-11 rounded-xl border px-2 text-sm font-medium transition-colors ${
+                    deliveryMethod === method
+                      ? "border-[var(--sf-primary)] bg-[var(--sf-primary-soft)] text-[var(--sf-fg)]"
+                      : "border-[var(--sf-border)] bg-[var(--sf-bg)] text-[var(--sf-muted)]"
+                  }`}
+                >
+                  {method === "fudgee"
+                    ? "Fudgee delivery"
+                    : method === "customer_arranged"
+                      ? "I'll arrange it"
+                      : method === "uber"
+                        ? "Uber"
+                        : "My own courier"}
+                </button>
+              ))}
+            </div>
+            {deliveryMethod !== "fudgee" && (
+              <p className="text-xs text-[var(--sf-muted)]">
+                No delivery fee — you&apos;re arranging{" "}
+                {deliveryMethod === "customer_arranged" ? "pickup/delivery" : deliveryMethod === "uber" ? "Uber" : "courier"}{" "}
+                yourself. Still let us know the address below in case it&apos;s needed for pickup/handoff.
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-[var(--sf-fg)]">Delivery address</span>
             <input type="hidden" name="shippingAddress" value={address} />

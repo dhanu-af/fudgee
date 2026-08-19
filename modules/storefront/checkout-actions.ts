@@ -121,31 +121,62 @@ export async function submitCheckout(
   const discountAmount = discountPercent ? applyDiscount(rawSubtotal, discountPercent) : 0;
   const subtotal = rawSubtotal - discountAmount;
 
-  // The authoritative delivery quote — never trusts whatever fee the client
-  // preview showed. An address beyond the configured delivery radius (e.g.
-  // Dhanu's 40km cutoff) hard-blocks checkout, since that's a deliberate
-  // "we don't deliver there" business rule; a geocoding/config hiccup
-  // ("unknown") does not — the order proceeds with a $0 delivery fee and a
-  // note for staff to confirm the real fee manually.
-  const deliveryQuote = await quoteDelivery(parsed.data.shippingAddress, subtotal, {
-    suburb: parsed.data.deliverySuburb,
-    postcode: parsed.data.deliveryPostcode,
-  });
-  // Out of range normally blocks checkout outright — but the "Send order
-  // request" button on the cart page resubmits with outOfRangeRequest set,
-  // explicitly asking to send the order in anyway for Dhanu to manually
-  // decide whether delivery is possible at all and what to charge for it.
-  // Never trust the client's own belief that it's out of range — this
-  // whole branch only runs once quoteDelivery (server-side, just above)
-  // has confirmed it really is.
-  const isOutOfRangeRequest = deliveryQuote.status === "out_of_range" && !!parsed.data.outOfRangeRequest;
-  if (deliveryQuote.status === "out_of_range" && !isOutOfRangeRequest) {
-    return {
-      error: `Sorry, that address is outside our delivery area (we deliver up to ${deliveryQuote.maxKm}km). Please check the address or contact us directly.`,
-    };
+  const deliveryMethod =
+    parsed.data.deliveryMethod === "fudgee"
+      ? "FUDGEE"
+      : parsed.data.deliveryMethod === "customer_arranged"
+        ? "CUSTOMER_ARRANGED"
+        : parsed.data.deliveryMethod === "uber"
+          ? "UBER"
+          : "COURIER";
+  const deliveryMethodLabel =
+    deliveryMethod === "CUSTOMER_ARRANGED"
+      ? "their own arranged pickup/delivery"
+      : deliveryMethod === "UBER"
+        ? "their own Uber"
+        : deliveryMethod === "COURIER"
+          ? "their own courier"
+          : null;
+
+  // Fudgee's own delivery is the only method that ever runs the
+  // distance/zone pricing engine — the other three mean the customer is
+  // getting it from us to themselves their own way, so there's nothing to
+  // geocode or charge for and out-of-range simply doesn't apply.
+  let deliveryQuote: DeliveryQuote | null = null;
+  let isOutOfRangeRequest = false;
+  let deliveryFee = 0;
+  let deliveryFeeReason: string | null = null;
+
+  if (deliveryMethod === "FUDGEE") {
+    // The authoritative delivery quote — never trusts whatever fee the
+    // client preview showed. An address beyond the configured delivery
+    // radius (e.g. Dhanu's 40km cutoff) hard-blocks checkout, since that's
+    // a deliberate "we don't deliver there" business rule; a
+    // geocoding/config hiccup ("unknown") does not — the order proceeds
+    // with a $0 delivery fee and a note for staff to confirm manually.
+    deliveryQuote = await quoteDelivery(parsed.data.shippingAddress, subtotal, {
+      suburb: parsed.data.deliverySuburb,
+      postcode: parsed.data.deliveryPostcode,
+    });
+    // Out of range normally blocks checkout outright — but the "Send
+    // order request" button on the cart page resubmits with
+    // outOfRangeRequest set, explicitly asking to send the order in
+    // anyway for Dhanu to manually decide whether delivery is possible at
+    // all and what to charge for it. Never trust the client's own belief
+    // that it's out of range — this whole branch only runs once
+    // quoteDelivery (server-side, just above) has confirmed it really is.
+    isOutOfRangeRequest = deliveryQuote.status === "out_of_range" && !!parsed.data.outOfRangeRequest;
+    if (deliveryQuote.status === "out_of_range" && !isOutOfRangeRequest) {
+      return {
+        error: `Sorry, that address is outside our delivery area (we deliver up to ${deliveryQuote.maxKm}km). Please check the address or contact us directly.`,
+      };
+    }
+    deliveryFee = deliveryQuote.status === "charged" ? deliveryQuote.fee : 0;
+    deliveryFeeReason =
+      deliveryQuote.status === "free" ? deliveryQuote.reason : deliveryQuote.status === "charged" ? deliveryQuote.zoneLabel : null;
+  } else {
+    deliveryFeeReason = `Customer is arranging ${deliveryMethodLabel} — no delivery fee charged.`;
   }
-  const deliveryFee = deliveryQuote.status === "charged" ? deliveryQuote.fee : 0;
-  const deliveryFeeReason = deliveryQuote.status === "free" ? deliveryQuote.reason : deliveryQuote.status === "charged" ? deliveryQuote.zoneLabel : null;
 
   const total = subtotal + deliveryFee;
   const gstAmount = gstComponent(total);
@@ -191,15 +222,18 @@ export async function submitCheckout(
   const paymentMethodLabel = paymentMethod === "STRIPE" ? "card" : paymentMethod === "CASH" ? "Cash" : "PayID";
 
   const notesParts = [`Placed via website storefront (${isOutOfRangeRequest ? "delivery outside standard range" : paymentMethodLabel}).`];
+  if (deliveryMethodLabel) {
+    notesParts.push(`Customer is arranging ${deliveryMethodLabel} — no delivery fee charged.`);
+  }
   if (isOutOfRangeRequest) {
     notesParts.push(
-      `⚠ Address is beyond our ${deliveryQuote.status === "out_of_range" ? deliveryQuote.maxKm : "configured"}km delivery radius — customer asked us to send the order anyway. Confirm whether delivery is possible and quote a fee before proceeding.`
+      `⚠ Address is beyond our ${deliveryQuote?.status === "out_of_range" ? deliveryQuote.maxKm : "configured"}km delivery radius — customer asked us to send the order anyway. Confirm whether delivery is possible and quote a fee before proceeding.`
     );
   } else if (paymentMethod !== "STRIPE") {
     notesParts.push(`Contact ${parsed.data.paymentPhone} to arrange/confirm ${paymentMethodLabel} payment.`);
   }
   if (parsed.data.notes) notesParts.push(`Customer note: ${parsed.data.notes}`);
-  if (deliveryQuote.status === "unknown") {
+  if (deliveryQuote?.status === "unknown") {
     notesParts.push(`⚠ Delivery fee could not be calculated automatically (${deliveryQuote.reason}) — confirm with customer.`);
   }
 
@@ -223,6 +257,7 @@ export async function submitCheckout(
       deliveryFee: deliveryFee > 0 ? deliveryFee : null,
       deliveryFeeReason,
       outOfDeliveryRange: isOutOfRangeRequest,
+      deliveryMethod,
       paymentMethod,
       paymentPhone: paymentMethod === "STRIPE" ? null : parsed.data.paymentPhone,
       lines: {

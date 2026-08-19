@@ -412,6 +412,21 @@ enum SalesOrderPaymentMethod {
   OTHER
 }
 
+// FUDGEE = Fudgee's own delivery, priced automatically by
+// lib/storefront/delivery.ts (the only path that ever sets a deliveryFee
+// from the zone/free-rule tables). CUSTOMER_ARRANGED/UBER/COURIER = the
+// customer is getting it from Fudgee to themselves their own way — no
+// distance calculation runs, no delivery fee is ever charged, and
+// outOfDeliveryRange never applies. OTHER is the default for
+// admin-created orders, which have no delivery-method concept at all.
+enum SalesOrderDeliveryMethod {
+  FUDGEE
+  CUSTOMER_ARRANGED
+  UBER
+  COURIER
+  OTHER
+}
+
 model SalesOrder {
   id                      String                  @id @default(cuid())
   // @unique added so a manually-entered order number (see createSalesOrder)
@@ -461,6 +476,7 @@ model SalesOrder {
   // confirm whether delivery is even possible and quote a fee before
   // anything else proceeds; deliveryFee stays null until they do.
   outOfDeliveryRange      Boolean                 @default(false)
+  deliveryMethod          SalesOrderDeliveryMethod @default(OTHER)
   paymentStatus           SalesOrderPaymentStatus @default(UNPAID)
   paymentMethod           SalesOrderPaymentMethod @default(OTHER)
   // Only set when paymentMethod is CASH or PAYID — the number the customer

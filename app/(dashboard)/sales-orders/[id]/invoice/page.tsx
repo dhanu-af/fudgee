@@ -49,6 +49,12 @@ export default async function SalesOrderInvoicePage({ params }: { params: Promis
                 </p>
               )
             )}
+            {order.deliveryMethod !== "FUDGEE" && order.deliveryMethod !== "OTHER" && (
+              <p className="text-muted-foreground">
+                Delivery: Customer arranged (
+                {order.deliveryMethod === "CUSTOMER_ARRANGED" ? "pickup" : order.deliveryMethod === "UBER" ? "Uber" : "courier"})
+              </p>
+            )}
           </div>
         </div>
 

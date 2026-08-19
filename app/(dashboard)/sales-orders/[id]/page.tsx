@@ -39,6 +39,13 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
           {so.paymentPhone && (
             <p className="text-xs text-muted-foreground">Payment contact: {so.paymentPhone}</p>
           )}
+          {so.deliveryMethod !== "FUDGEE" && so.deliveryMethod !== "OTHER" && (
+            <p className="text-xs text-muted-foreground">
+              Delivery: customer arranged their own (
+              {so.deliveryMethod === "CUSTOMER_ARRANGED" ? "pickup" : so.deliveryMethod === "UBER" ? "Uber" : "courier"}
+              ) — no delivery fee charged.
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <Badge>{so.status}</Badge>

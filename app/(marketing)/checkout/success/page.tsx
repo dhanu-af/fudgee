@@ -40,16 +40,18 @@ export default async function CheckoutSuccessPage({
     <div className="mx-auto flex max-w-lg flex-col items-center gap-4 px-5 py-24 text-center">
       <ClearCartOnMount />
       <span className="flex size-16 items-center justify-center rounded-full bg-[var(--sf-primary-soft)] text-3xl">
-        🎉
+        {order?.outOfDeliveryRange ? "📨" : "🎉"}
       </span>
       <h1 className="font-display text-3xl font-semibold text-[var(--sf-fg)]">
-        {isManualPayment ? "Order placed!" : "Payment received!"}
+        {order?.outOfDeliveryRange ? "Request received!" : isManualPayment ? "Order placed!" : "Payment received!"}
       </h1>
       <p className="text-[var(--sf-muted)]">
         Thank you{order ? <> — your order <strong>#{order.seq}</strong></> : null}
-        {isManualPayment
-          ? ` has been placed. We'll contact you shortly to arrange ${order?.paymentMethod === "PAYID" ? "PayID" : "cash"} payment and delivery.`
-          : " has been paid and sent through. We'll be in touch shortly to arrange delivery."}
+        {order?.outOfDeliveryRange
+          ? " is outside our standard delivery area, so we haven't charged anything yet. We'll contact you shortly to confirm whether delivery is possible and what it would cost."
+          : isManualPayment
+            ? ` has been placed. We'll contact you shortly to arrange ${order?.paymentMethod === "PAYID" ? "PayID" : "cash"} payment and delivery.`
+            : " has been paid and sent through. We'll be in touch shortly to arrange delivery."}
       </p>
       {paymentInstructions && <p className="text-[var(--sf-muted)]">{paymentInstructions}</p>}
       <Link

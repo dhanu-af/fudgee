@@ -359,58 +359,71 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
             <textarea id="notes" name="notes" rows={2} placeholder="Delivery instructions, allergies, gift message..." className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--sf-primary)]" />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-[var(--sf-fg)]">Payment method</span>
-            <input type="hidden" name="paymentMethod" value={paymentMethod} />
-            <div className="grid grid-cols-3 gap-2">
-              {(["card", "cash", "payid"] as const).map((method) => (
-                <button
-                  key={method}
-                  type="button"
-                  onClick={() => setPaymentMethod(method)}
-                  className={`h-11 rounded-xl border text-sm font-medium transition-colors ${
-                    paymentMethod === method
-                      ? "border-[var(--sf-primary)] bg-[var(--sf-primary-soft)] text-[var(--sf-fg)]"
-                      : "border-[var(--sf-border)] bg-[var(--sf-bg)] text-[var(--sf-muted)]"
-                  }`}
-                >
-                  {method === "card" ? "Card" : method === "cash" ? "Cash" : "PayID"}
-                </button>
-              ))}
+          {blockedByDelivery ? (
+            <div className="flex flex-col gap-2 rounded-xl border border-red-300 bg-red-50 p-4">
+              <input type="hidden" name="outOfRangeRequest" value="true" />
+              <p className="text-sm text-red-600">
+                This address is outside our standard delivery area, so we can&apos;t charge you automatically. You
+                can still send us your order — we&apos;ll contact you to confirm whether delivery is possible and
+                what it would cost before anything is charged.
+              </p>
             </div>
-            {paymentMethod !== "card" && (
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="paymentPhone" className="text-xs text-[var(--sf-muted)]">
-                  Mobile number (so we can arrange {paymentMethod === "cash" ? "cash" : "PayID"} payment)
-                </label>
-                <input
-                  id="paymentPhone"
-                  name="paymentPhone"
-                  required
-                  type="tel"
-                  autoComplete="tel"
-                  value={paymentPhone}
-                  onChange={(e) => setPaymentPhone(e.target.value)}
-                  placeholder="04XX XXX XXX"
-                  className="h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 text-sm outline-none focus:border-[var(--sf-primary)]"
-                />
+          ) : (
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-[var(--sf-fg)]">Payment method</span>
+              <input type="hidden" name="paymentMethod" value={paymentMethod} />
+              <div className="grid grid-cols-3 gap-2">
+                {(["card", "cash", "payid"] as const).map((method) => (
+                  <button
+                    key={method}
+                    type="button"
+                    onClick={() => setPaymentMethod(method)}
+                    className={`h-11 rounded-xl border text-sm font-medium transition-colors ${
+                      paymentMethod === method
+                        ? "border-[var(--sf-primary)] bg-[var(--sf-primary-soft)] text-[var(--sf-fg)]"
+                        : "border-[var(--sf-border)] bg-[var(--sf-bg)] text-[var(--sf-muted)]"
+                    }`}
+                  >
+                    {method === "card" ? "Card" : method === "cash" ? "Cash" : "PayID"}
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
+              {paymentMethod !== "card" && (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="paymentPhone" className="text-xs text-[var(--sf-muted)]">
+                    Mobile number (so we can arrange {paymentMethod === "cash" ? "cash" : "PayID"} payment)
+                  </label>
+                  <input
+                    id="paymentPhone"
+                    name="paymentPhone"
+                    required
+                    type="tel"
+                    autoComplete="tel"
+                    value={paymentPhone}
+                    onChange={(e) => setPaymentPhone(e.target.value)}
+                    placeholder="04XX XXX XXX"
+                    className="h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-bg)] px-4 text-sm outline-none focus:border-[var(--sf-primary)]"
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {state.error && <p className="text-sm text-red-500">{state.error}</p>}
 
           <button
             type="submit"
-            disabled={pending || blockedByDelivery}
+            disabled={pending}
             className="mt-2 rounded-full bg-[var(--sf-primary)] py-4 text-center text-base font-semibold text-[var(--sf-primary-foreground)] shadow-md shadow-[var(--sf-primary)]/20 transition-transform hover:scale-[1.02] disabled:opacity-60"
           >
             {pending
-              ? paymentMethod === "card"
-                ? "Redirecting to payment..."
-                : "Placing order..."
+              ? blockedByDelivery
+                ? "Sending request..."
+                : paymentMethod === "card"
+                  ? "Redirecting to payment..."
+                  : "Placing order..."
               : blockedByDelivery
-                ? "Delivery unavailable for this address"
+                ? "Send order request"
                 : paymentMethod === "card"
                   ? `Pay now — $${grandTotal.toFixed(2)}`
                   : `Place order — $${grandTotal.toFixed(2)}`}

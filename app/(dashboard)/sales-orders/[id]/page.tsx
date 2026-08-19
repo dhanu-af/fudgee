@@ -42,10 +42,14 @@ export default async function SalesOrderDetailPage({ params }: { params: Promise
         <div className="flex gap-2">
           <Badge>{so.status}</Badge>
           <Badge variant={so.paymentStatus === "PAID" ? "default" : "secondary"}>{so.paymentStatus}</Badge>
-          {so.paymentMethod !== "OTHER" && (
-            <Badge variant="outline">
-              {so.paymentMethod === "STRIPE" ? "Card" : so.paymentMethod === "CASH" ? "Cash" : "PayID"}
-            </Badge>
+          {so.outOfDeliveryRange ? (
+            <Badge variant="destructive">Over delivery range</Badge>
+          ) : (
+            so.paymentMethod !== "OTHER" && (
+              <Badge variant="outline">
+                {so.paymentMethod === "STRIPE" ? "Card" : so.paymentMethod === "CASH" ? "Cash" : "PayID"}
+              </Badge>
+            )
           )}
         </div>
       </div>

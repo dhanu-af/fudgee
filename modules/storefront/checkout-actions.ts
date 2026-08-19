@@ -131,7 +131,15 @@ export async function submitCheckout(
     suburb: parsed.data.deliverySuburb,
     postcode: parsed.data.deliveryPostcode,
   });
-  if (deliveryQuote.status === "out_of_range") {
+  // Out of range normally blocks checkout outright — but the "Send order
+  // request" button on the cart page resubmits with outOfRangeRequest set,
+  // explicitly asking to send the order in anyway for Dhanu to manually
+  // decide whether delivery is possible at all and what to charge for it.
+  // Never trust the client's own belief that it's out of range — this
+  // whole branch only runs once quoteDelivery (server-side, just above)
+  // has confirmed it really is.
+  const isOutOfRangeRequest = deliveryQuote.status === "out_of_range" && !!parsed.data.outOfRangeRequest;
+  if (deliveryQuote.status === "out_of_range" && !isOutOfRangeRequest) {
     return {
       error: `Sorry, that address is outside our delivery area (we deliver up to ${deliveryQuote.maxKm}km). Please check the address or contact us directly.`,
     };
@@ -170,12 +178,24 @@ export async function submitCheckout(
     });
   }
 
-  const paymentMethod =
-    parsed.data.paymentMethod === "card" ? "STRIPE" : parsed.data.paymentMethod === "cash" ? "CASH" : "PAYID";
+  // Payment can't be arranged until Dhanu has manually confirmed delivery
+  // is even possible and quoted a fee, so an out-of-range request ignores
+  // whatever paymentMethod/paymentPhone the form happened to carry.
+  const paymentMethod = isOutOfRangeRequest
+    ? "OTHER"
+    : parsed.data.paymentMethod === "card"
+      ? "STRIPE"
+      : parsed.data.paymentMethod === "cash"
+        ? "CASH"
+        : "PAYID";
   const paymentMethodLabel = paymentMethod === "STRIPE" ? "card" : paymentMethod === "CASH" ? "Cash" : "PayID";
 
-  const notesParts = [`Placed via website storefront (${paymentMethodLabel}).`];
-  if (paymentMethod !== "STRIPE") {
+  const notesParts = [`Placed via website storefront (${isOutOfRangeRequest ? "delivery outside standard range" : paymentMethodLabel}).`];
+  if (isOutOfRangeRequest) {
+    notesParts.push(
+      `⚠ Address is beyond our ${deliveryQuote.status === "out_of_range" ? deliveryQuote.maxKm : "configured"}km delivery radius — customer asked us to send the order anyway. Confirm whether delivery is possible and quote a fee before proceeding.`
+    );
+  } else if (paymentMethod !== "STRIPE") {
     notesParts.push(`Contact ${parsed.data.paymentPhone} to arrange/confirm ${paymentMethodLabel} payment.`);
   }
   if (parsed.data.notes) notesParts.push(`Customer note: ${parsed.data.notes}`);
@@ -202,6 +222,7 @@ export async function submitCheckout(
       discountAmount: discountAmount > 0 ? discountAmount : null,
       deliveryFee: deliveryFee > 0 ? deliveryFee : null,
       deliveryFeeReason,
+      outOfDeliveryRange: isOutOfRangeRequest,
       paymentMethod,
       paymentPhone: paymentMethod === "STRIPE" ? null : parsed.data.paymentPhone,
       lines: {
@@ -225,12 +246,13 @@ export async function submitCheckout(
   if (process.env.ADMIN_WHATSAPP_NUMBER) {
     try {
       const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
-      const paymentNote =
-        paymentMethod === "STRIPE"
+      const paymentNote = isOutOfRangeRequest
+        ? `OVER DELIVERY RANGE — confirm delivery is possible and quote a fee`
+        : paymentMethod === "STRIPE"
           ? "payment pending"
           : `wants to pay by ${paymentMethodLabel} — contact ${parsed.data.paymentPhone}`;
       const message =
-        `🛒 New order ${orderNumber} from ${customer.name} — $${Number(order.total).toFixed(2)} AUD (${paymentNote})\n` +
+        `${isOutOfRangeRequest ? "🚨" : "🛒"} New order ${orderNumber} from ${customer.name} — $${Number(order.total).toFixed(2)} AUD (${paymentNote})\n` +
         `${ADMIN_URL}/sales-orders/${order.id}`;
       const results = await notifyAdmins(message);
       for (const r of results) {
@@ -244,7 +266,7 @@ export async function submitCheckout(
   try {
     const orderNumber = `SO-${String(order.seq).padStart(4, "0")}`;
     const emailResults = await notifyAdminsByEmail(
-      `New order ${orderNumber} — $${Number(order.total).toFixed(2)} AUD`,
+      `${isOutOfRangeRequest ? "🚨 Over delivery range — " : ""}New order ${orderNumber} — $${Number(order.total).toFixed(2)} AUD`,
       orderNotificationEmailHtml({
         orderNumber,
         customerName: customer.name,
@@ -260,10 +282,11 @@ export async function submitCheckout(
     console.error("Failed to send order-placed email", err);
   }
 
-  // Cash/PayID never touches Stripe — the order already exists (UNPAID,
-  // with the customer's contact number recorded above), so there's nothing
-  // left to do but send them to the confirmation page. Dhanu marks the
-  // order PAID by hand once she's actually received the money.
+  // Cash/PayID/out-of-range-request never touch Stripe — the order already
+  // exists (UNPAID), so there's nothing left to do but send them to the
+  // confirmation page. Dhanu marks it PAID by hand once she's actually
+  // received the money (and, for an out-of-range order, only after she's
+  // confirmed delivery is even possible).
   if (paymentMethod !== "STRIPE") {
     revalidatePath("/sales-orders");
     revalidatePath("/customers");

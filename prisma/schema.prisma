@@ -453,6 +453,14 @@ model SalesOrder {
   // The free-delivery reason shown to the customer, or the matched zone's
   // label, or null if no delivery fee was charged/applicable.
   deliveryFeeReason       String?
+  // Set when the customer's address was beyond the configured delivery
+  // radius (quoteDelivery's "out_of_range") but they chose to send the
+  // order in anyway rather than have checkout block them outright — see
+  // the "Send order request" path in checkout-actions.ts. Shown as an
+  // "Over delivery range" flag in Operations so staff know to manually
+  // confirm whether delivery is even possible and quote a fee before
+  // anything else proceeds; deliveryFee stays null until they do.
+  outOfDeliveryRange      Boolean                 @default(false)
   paymentStatus           SalesOrderPaymentStatus @default(UNPAID)
   paymentMethod           SalesOrderPaymentMethod @default(OTHER)
   // Only set when paymentMethod is CASH or PAYID — the number the customer

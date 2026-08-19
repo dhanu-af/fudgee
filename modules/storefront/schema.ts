@@ -243,7 +243,12 @@ export const checkoutSchema = z.object({
   // Required only for cash/payid (checked below) — the number Dhanu
   // contacts to arrange payment, which may differ from `phone` above.
   paymentPhone: z.string().max(50).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
-}).refine((data) => data.paymentMethod === "card" || !!data.paymentPhone, {
+  // Set only by the "Send order request" button shown when the address is
+  // beyond the delivery radius — skips the payment-method requirement
+  // below entirely, since payment can't be arranged until Dhanu manually
+  // confirms delivery is even possible (see submitCheckout).
+  outOfRangeRequest: z.coerce.boolean().optional(),
+}).refine((data) => data.outOfRangeRequest || data.paymentMethod === "card" || !!data.paymentPhone, {
   message: "A mobile number is required for Cash or PayID payment.",
   path: ["paymentPhone"],
 });

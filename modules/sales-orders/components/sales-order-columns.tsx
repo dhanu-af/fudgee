@@ -10,6 +10,7 @@ export type SalesOrderRow = {
   status: string;
   paymentStatus: string;
   paymentMethod: string;
+  outOfDeliveryRange: boolean;
   orderDate: Date;
   total: unknown;
   customer: { name: string };
@@ -71,7 +72,12 @@ export const salesOrderColumns: ColumnDef<SalesOrderRow>[] = [
   {
     accessorKey: "paymentMethod",
     header: "Payment option",
-    cell: ({ row }) => paymentMethodLabel[row.original.paymentMethod] ?? row.original.paymentMethod,
+    cell: ({ row }) =>
+      row.original.outOfDeliveryRange ? (
+        <Badge variant="destructive">Over delivery range</Badge>
+      ) : (
+        paymentMethodLabel[row.original.paymentMethod] ?? row.original.paymentMethod
+      ),
   },
   { accessorKey: "total", header: "Total", cell: ({ row }) => String(row.original.total) },
 ];

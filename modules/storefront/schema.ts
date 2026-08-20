@@ -237,11 +237,13 @@ export const checkoutSchema = z.object({
   linesJson: z.string().min(1),
   promoCode: z.string().max(30).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
   // "card" pays immediately through Stripe (the only path that existed
-  // before); "cash"/"payid" create the order UNPAID and skip Stripe
-  // entirely — Dhanu arranges/confirms payment with the customer directly.
-  paymentMethod: z.enum(["card", "cash", "payid"]).default("card"),
-  // Required only for cash/payid (checked below) — the number Dhanu
-  // contacts to arrange payment, which may differ from `phone` above.
+  // before); "payid" creates the order UNPAID and skips Stripe entirely —
+  // Dhanu arranges/confirms payment with the customer directly. Cash was
+  // removed as an option — not permitted for this business under
+  // Australian cash-handling rules.
+  paymentMethod: z.enum(["card", "payid"]).default("card"),
+  // Required only for payid (checked below) — the number Dhanu contacts
+  // to arrange payment, which may differ from `phone` above.
   paymentPhone: z.string().max(50).optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
   // Set only by the "Send order request" button shown when the address is
   // beyond the delivery radius — skips the payment-method requirement

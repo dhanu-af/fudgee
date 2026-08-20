@@ -5,13 +5,13 @@ import { resolveOrderPayment, type ResolveOrderPaymentState } from "@/modules/st
 
 export function OrderPaymentChooser({ orderId, total }: { orderId: string; total: number }) {
   const [state, formAction, pending] = useActionState<ResolveOrderPaymentState, FormData>(resolveOrderPayment, {});
-  const [method, setMethod] = useState<"card" | "cash" | "payid">("card");
+  const [method, setMethod] = useState<"card" | "payid">("card");
   const [phone, setPhone] = useState("");
 
   if (state.success) {
     return (
       <p className="text-sm font-medium text-[var(--sf-primary)]">
-        Got it — we&apos;ll contact {phone} to arrange {method === "cash" ? "cash" : "PayID"} payment.
+        Got it — we&apos;ll contact {phone} to arrange PayID payment.
       </p>
     );
   }
@@ -21,8 +21,8 @@ export function OrderPaymentChooser({ orderId, total }: { orderId: string; total
       <input type="hidden" name="orderId" value={orderId} />
       <input type="hidden" name="method" value={method} />
       <span className="text-xs font-medium text-[var(--sf-muted)]">Choose how to pay</span>
-      <div className="grid grid-cols-3 gap-2">
-        {(["card", "cash", "payid"] as const).map((m) => (
+      <div className="grid grid-cols-2 gap-2">
+        {(["card", "payid"] as const).map((m) => (
           <button
             key={m}
             type="button"
@@ -33,7 +33,7 @@ export function OrderPaymentChooser({ orderId, total }: { orderId: string; total
                 : "border-[var(--sf-border)] bg-[var(--sf-bg)] text-[var(--sf-muted)]"
             }`}
           >
-            {m === "card" ? "Card" : m === "cash" ? "Cash" : "PayID"}
+            {m === "card" ? "Card" : "PayID"}
           </button>
         ))}
       </div>

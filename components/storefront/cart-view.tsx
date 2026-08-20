@@ -25,7 +25,7 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
   const [postcode, setPostcode] = useState("");
   const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
   const [quotePending, setQuotePending] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "payid">("card");
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "payid">("card");
   const [paymentPhone, setPaymentPhone] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<"fudgee" | "customer_arranged" | "uber" | "courier">("fudgee");
 
@@ -410,8 +410,8 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium text-[var(--sf-fg)]">Payment method</span>
               <input type="hidden" name="paymentMethod" value={paymentMethod} />
-              <div className="grid grid-cols-3 gap-2">
-                {(["card", "cash", "payid"] as const).map((method) => (
+              <div className="grid grid-cols-2 gap-2">
+                {(["card", "payid"] as const).map((method) => (
                   <button
                     key={method}
                     type="button"
@@ -422,14 +422,14 @@ export function CartView({ discounts }: { discounts: DiscountTier[] }) {
                         : "border-[var(--sf-border)] bg-[var(--sf-bg)] text-[var(--sf-muted)]"
                     }`}
                   >
-                    {method === "card" ? "Card" : method === "cash" ? "Cash" : "PayID"}
+                    {method === "card" ? "Card" : "PayID"}
                   </button>
                 ))}
               </div>
               {paymentMethod !== "card" && (
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="paymentPhone" className="text-xs text-[var(--sf-muted)]">
-                    Mobile number (so we can arrange {paymentMethod === "cash" ? "cash" : "PayID"} payment)
+                    Mobile number (so we can arrange PayID payment)
                   </label>
                   <input
                     id="paymentPhone"

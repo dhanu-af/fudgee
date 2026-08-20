@@ -32,7 +32,7 @@ export async function getDeliveryQuoteAction(
 // An unauthenticated entry point — re-derives everything from the database
 // (prices, stock status, discount eligibility) and never trusts a
 // client-submitted price or product id. Despite the name, this doesn't
-// always talk to Stripe: paymentMethod "cash"/"payid" creates the order
+// always talk to Stripe: paymentMethod "payid" creates the order
 // UNPAID and skips Stripe entirely, redirecting straight to the
 // confirmation page instead.
 
@@ -213,14 +213,8 @@ export async function submitCheckout(
   // Payment can't be arranged until Dhanu has manually confirmed delivery
   // is even possible and quoted a fee, so an out-of-range request ignores
   // whatever paymentMethod/paymentPhone the form happened to carry.
-  const paymentMethod = isOutOfRangeRequest
-    ? "OTHER"
-    : parsed.data.paymentMethod === "card"
-      ? "STRIPE"
-      : parsed.data.paymentMethod === "cash"
-        ? "CASH"
-        : "PAYID";
-  const paymentMethodLabel = paymentMethod === "STRIPE" ? "card" : paymentMethod === "CASH" ? "Cash" : "PayID";
+  const paymentMethod = isOutOfRangeRequest ? "OTHER" : parsed.data.paymentMethod === "card" ? "STRIPE" : "PAYID";
+  const paymentMethodLabel = paymentMethod === "STRIPE" ? "card" : "PayID";
 
   const notesParts = [`Placed via website storefront (${isOutOfRangeRequest ? "delivery outside standard range" : paymentMethodLabel}).`];
   if (deliveryMethodLabel) {
@@ -405,7 +399,7 @@ export async function submitCheckout(
 }
 
 // Lets a customer settle an order that's UNPAID without a chosen payment
-// method yet resolving into one — cash/PayID orders that never picked a
+// method yet resolving into one — a PayID order that never picked a
 // contact number, or an "Over delivery range" request Dhanu has since
 // quoted a fee for (see setDeliveryFee in modules/sales-orders/actions.ts)
 // and therefore never went through the checkout payment step at all.
@@ -420,7 +414,7 @@ export async function resolveOrderPayment(
   const orderId = formData.get("orderId");
   const method = formData.get("method");
   if (typeof orderId !== "string" || !orderId) return { error: "Order not found." };
-  if (method !== "card" && method !== "cash" && method !== "payid") {
+  if (method !== "card" && method !== "payid") {
     return { error: "Choose a payment method." };
   }
 
@@ -477,14 +471,14 @@ export async function resolveOrderPayment(
     redirect(checkoutUrl);
   }
 
-  // cash / payid — no Stripe involved, just record how Dhanu should reach
-  // the customer to actually collect payment.
+  // payid — no Stripe involved, just record how Dhanu should reach the
+  // customer to actually collect payment.
   const phoneRaw = formData.get("paymentPhone");
   const phone = typeof phoneRaw === "string" ? phoneRaw.trim() : "";
-  if (!phone) return { error: "A mobile number is required for Cash or PayID payment." };
+  if (!phone) return { error: "A mobile number is required for PayID payment." };
 
-  const paymentMethod = method === "cash" ? "CASH" : "PAYID";
-  const methodLabel = method === "cash" ? "Cash" : "PayID";
+  const paymentMethod = "PAYID";
+  const methodLabel = "PayID";
   await db.salesOrder.update({
     where: { id: order.id },
     data: { paymentMethod, paymentPhone: phone },

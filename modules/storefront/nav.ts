@@ -2,6 +2,7 @@
 // list in sync as new storefront content types are added.
 export const STOREFRONT_TABS = [
   { label: "Promotions", href: "/storefront/promotions" },
+  { label: "News", href: "/storefront/news" },
   { label: "Categories", href: "/storefront/categories" },
   { label: "Gallery", href: "/storefront/gallery" },
   { label: "Hero Images", href: "/storefront/hero-images" },

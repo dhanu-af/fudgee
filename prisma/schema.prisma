@@ -747,6 +747,28 @@ model Promotion {
   updatedAt   DateTime  @updatedAt
 }
 
+// Homepage "News & Milestones" — announcements, achievements, updates. Same
+// isActive/sortOrder shape as Promotion, but no pricing effect and no date
+// window: `publishedAt` is purely a display date, editable so an admin can
+// backdate an announcement (e.g. "we hit 500 orders last week") to when it
+// actually happened rather than when it was typed in.
+model NewsItem {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  // Small uppercase label shown above the title, e.g. "Milestone" or
+  // "Announcement" — free text so it's not locked to a fixed category list.
+  badge       String?
+  imageUrl    String?
+  linkUrl     String?
+  linkLabel   String?
+  publishedAt DateTime  @default(now())
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 // Single-row settings for the public homepage's non-repeating copy (hero,
 // about, contact, newsletter blurb) — same singleton pattern as
 // Organization above, edited via one form rather than a collection.

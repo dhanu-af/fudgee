@@ -62,6 +62,23 @@ export function getPromotionById(id: string) {
   return db.promotion.findUnique({ where: { id } });
 }
 
+export function getNewsItems() {
+  return db.newsItem.findMany({ orderBy: [{ publishedAt: "desc" }, { sortOrder: "asc" }] });
+}
+
+export function getNewsItemById(id: string) {
+  return db.newsItem.findUnique({ where: { id } });
+}
+
+// Public homepage read — newest first, admin-toggled visibility only (no
+// scheduling window like Promotion; publishedAt is display-only).
+export function getActiveNewsItems() {
+  return db.newsItem.findMany({
+    where: { isActive: true },
+    orderBy: [{ publishedAt: "desc" }, { sortOrder: "asc" }],
+  });
+}
+
 export function getDeliveryZones() {
   return db.deliveryZone.findMany({ orderBy: [{ minKm: "asc" }, { sortOrder: "asc" }] });
 }
@@ -169,10 +186,11 @@ export function getActiveDiscountPromotions() {
 // public site.
 
 export async function getStorefrontHomepageData() {
-  const [settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems] =
+  const [settings, promotions, newsItems, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems] =
     await Promise.all([
       getStorefrontSettings(),
       getActivePromotions(),
+      getActiveNewsItems(),
       db.category.findMany({
         where: { isActive: true },
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -204,7 +222,7 @@ export async function getStorefrontHomepageData() {
       db.faqItem.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
     ]);
 
-  return { settings, promotions, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems };
+  return { settings, promotions, newsItems, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems };
 }
 
 // Every purchasable product (for the shop/cart), grouped implicitly by

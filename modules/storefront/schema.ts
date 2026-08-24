@@ -126,6 +126,19 @@ export const promotionSchema = z.object({
 });
 export type PromotionInput = z.infer<typeof promotionSchema>;
 
+export const newsItemSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  description: optionalText(1000),
+  badge: optionalText(50),
+  imageUrl: optionalText(2000),
+  linkUrl: optionalText(500),
+  linkLabel: optionalText(50),
+  publishedAt: z.coerce.date(),
+  sortOrder: z.coerce.number().int().default(0),
+  isActive: z.coerce.boolean(),
+});
+export type NewsItemInput = z.infer<typeof newsItemSchema>;
+
 export const storefrontSettingsSchema = z.object({
   heroHeading: optionalText(200),
   heroSubheading: optionalText(500),

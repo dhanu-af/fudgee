@@ -14,6 +14,7 @@ import {
   reviewSchema,
   faqItemSchema,
   promotionSchema,
+  newsItemSchema,
   storefrontSettingsSchema,
   deliveryZoneSchema,
   deliveryFreeRuleSchema,
@@ -381,6 +382,75 @@ export async function deletePromotion(
   revalidatePath("/storefront/promotions");
   revalidatePath("/");
   redirect("/storefront/promotions");
+}
+
+// --- News & Milestones ---
+
+export async function createNewsItem(
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = newsItemSchema.safeParse({
+    title: formData.get("title"),
+    description: formData.get("description"),
+    badge: formData.get("badge"),
+    imageUrl: formData.get("imageUrl"),
+    linkUrl: formData.get("linkUrl"),
+    linkLabel: formData.get("linkLabel"),
+    publishedAt: formData.get("publishedAt"),
+    sortOrder: formData.get("sortOrder"),
+    isActive: formData.get("isActive") === "on",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.newsItem.create({ data: parsed.data });
+
+  revalidatePath("/storefront/news");
+  revalidatePath("/");
+  redirect("/storefront/news");
+}
+
+export async function updateNewsItem(
+  id: string,
+  _prev: StorefrontFormState,
+  formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_MANAGE);
+
+  const parsed = newsItemSchema.safeParse({
+    title: formData.get("title"),
+    description: formData.get("description"),
+    badge: formData.get("badge"),
+    imageUrl: formData.get("imageUrl"),
+    linkUrl: formData.get("linkUrl"),
+    linkLabel: formData.get("linkLabel"),
+    publishedAt: formData.get("publishedAt"),
+    sortOrder: formData.get("sortOrder"),
+    isActive: formData.get("isActive") === "on",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+
+  await db.newsItem.update({ where: { id }, data: parsed.data });
+
+  revalidatePath("/storefront/news");
+  revalidatePath("/");
+  redirect("/storefront/news");
+}
+
+export async function deleteNewsItem(
+  id: string,
+  _prev: StorefrontFormState,
+  _formData: FormData
+): Promise<StorefrontFormState> {
+  await requirePermission(PERMISSIONS.STOREFRONT_DELETE);
+
+  await db.newsItem.delete({ where: { id } }).catch(() => null);
+
+  revalidatePath("/storefront/news");
+  revalidatePath("/");
+  redirect("/storefront/news");
 }
 
 // --- Storefront settings (singleton — self-initializes on first save) ---

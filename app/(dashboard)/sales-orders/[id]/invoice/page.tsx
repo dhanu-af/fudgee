@@ -147,6 +147,15 @@ export default async function SalesOrderInvoicePage({ params }: { params: Promis
           </div>
         </div>
 
+        {order.paymentMethod !== "STRIPE" && order.paymentStatus !== "PAID" && settings?.bankAccountDetails && (
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Direct bank transfer
+            </p>
+            <p className="mt-1 whitespace-pre-line">{settings.bankAccountDetails}</p>
+          </div>
+        )}
+
         <div className="mt-8 border-t border-border/60 pt-6 text-center">
           <p className="text-xl font-semibold italic">Thank you!</p>
           <p className="text-xs text-muted-foreground">It has been a pleasure doing business with you.</p>

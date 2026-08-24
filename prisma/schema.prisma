@@ -819,6 +819,12 @@ model StorefrontSettings {
   // principle as legalBusinessName/abn above).
   payIdDetails      String?
   cashInstructions  String?
+  // Direct bank transfer details (BSB, account number, account name) —
+  // shown on the invoice itself (both admin and customer-facing) for any
+  // order not paid by Stripe, so the customer knows exactly where to send
+  // a manual transfer. Distinct from payIdDetails since a real BSB/account
+  // number is different information from a PayID identifier.
+  bankAccountDetails String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

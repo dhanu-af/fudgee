@@ -44,6 +44,7 @@ type StorefrontSettings = {
   originLng: unknown;
   payIdDetails: string | null;
   cashInstructions: string | null;
+  bankAccountDetails: string | null;
 } | null;
 
 export function StorefrontSettingsForm({ settings }: { settings: StorefrontSettings }) {
@@ -198,6 +199,19 @@ export function StorefrontSettingsForm({ settings }: { settings: StorefrontSetti
             placeholder="e.g. Send PayID payment to 0400 000 000 (Fudgee)"
             defaultValue={settings?.payIdDetails ?? ""}
           />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="bankAccountDetails">Bank account details</Label>
+          <Textarea
+            id="bankAccountDetails"
+            name="bankAccountDetails"
+            placeholder={"Account name: Fudgee\nBSB: 000-000\nAccount number: 00000000"}
+            defaultValue={settings?.bankAccountDetails ?? ""}
+          />
+          <p className="text-xs text-muted-foreground">
+            Printed on the invoice itself for any order not paid by card through Stripe — so the customer knows
+            exactly where to send a direct bank transfer.
+          </p>
         </div>
       </section>
 

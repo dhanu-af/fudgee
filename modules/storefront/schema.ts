@@ -164,6 +164,7 @@ export const storefrontSettingsSchema = z.object({
   originAddress: optionalText(500),
   payIdDetails: optionalText(300),
   cashInstructions: optionalText(300),
+  bankAccountDetails: optionalText(500),
 });
 export type StorefrontSettingsInput = z.infer<typeof storefrontSettingsSchema>;
 

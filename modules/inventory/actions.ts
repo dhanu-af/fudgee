@@ -40,6 +40,16 @@ export async function createAdjustment(
 
 export type TransactionActionState = { error?: string };
 
+// Whether the record a transaction's referenceType/referenceId points at is
+// still around — used by deleteInventoryTransaction below to tell a live
+// reference (blocked) from an orphan (safe to remove) apart.
+const REFERENCE_EXISTS_CHECK: Record<string, (id: string) => Promise<boolean>> = {
+  ProductionBatch: async (id) => (await db.productionBatch.count({ where: { id } })) > 0,
+  PurchaseOrder: async (id) => (await db.purchaseOrder.count({ where: { id } })) > 0,
+  Shipment: async (id) => (await db.shipment.count({ where: { id } })) > 0,
+  SalesOrder: async (id) => (await db.salesOrder.count({ where: { id } })) > 0,
+};
+
 export async function deleteInventoryTransaction(
   id: string,
   _prev: TransactionActionState,
@@ -50,15 +60,23 @@ export async function deleteInventoryTransaction(
   const transaction = await db.inventoryTransaction.findUnique({ where: { id } });
   if (!transaction) return { error: "Transaction not found." };
   // referenceType/referenceId are set only on entries created automatically
-  // by receiving a Purchase Order, completing a Production Batch, or
-  // dispatching a Shipment — deleting one of those independently would leave
-  // stock inconsistent with that source record's own history, with no way
-  // to reverse it there. Only manual adjustments (createAdjustment, no
-  // reference) are safe to delete outright.
+  // by receiving a Purchase Order, completing a Production Batch, dispatching
+  // a Shipment, or fulfilling a Sales Order — deleting one of those while its
+  // source record still exists would leave stock inconsistent with that
+  // record's own history, with no way to reverse it there. But if the source
+  // record itself has since been deleted (e.g. a since-removed Production
+  // Batch, or an older one deleted before deleteProductionBatch was fixed to
+  // clean up after itself), there's nothing left to stay consistent with —
+  // blocking forever would just leave permanently-stuck junk rows.
   if (transaction.referenceType) {
-    return {
-      error: `Can't delete — this entry was created by a ${transaction.referenceType}, not a manual adjustment.`,
-    };
+    const stillExists = transaction.referenceId
+      ? await REFERENCE_EXISTS_CHECK[transaction.referenceType]?.(transaction.referenceId)
+      : false;
+    if (stillExists) {
+      return {
+        error: `Can't delete — this entry was created by a ${transaction.referenceType}, not a manual adjustment. Delete/cancel that ${transaction.referenceType} instead.`,
+      };
+    }
   }
 
   try {

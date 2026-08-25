@@ -151,11 +151,22 @@ export async function deleteProductionBatch(
   await requirePermission(PERMISSIONS.SYSTEM_DELETE);
 
   try {
-    await db.productionBatch.delete({ where: { id } });
+    // completeProductionBatch() creates InventoryTransaction rows tagged
+    // referenceType: "ProductionBatch" for the raw-material issue and
+    // finished-good receipt — there's no DB-level FK/cascade for that loose
+    // reference (see deleteInventoryTransaction's guard), so without this
+    // explicit cleanup those rows would survive the batch, permanently stuck
+    // ("Can't delete — created by a ProductionBatch") and leaving stock
+    // counts reflecting a batch that no longer exists.
+    await db.$transaction([
+      db.inventoryTransaction.deleteMany({ where: { referenceType: "ProductionBatch", referenceId: id } }),
+      db.productionBatch.delete({ where: { id } }),
+    ]);
   } catch {
     return { error: "Failed to delete production batch." };
   }
 
   revalidatePath("/production");
+  revalidatePath("/inventory");
   redirect("/production");
 }

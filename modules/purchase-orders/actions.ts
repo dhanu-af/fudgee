@@ -58,6 +58,16 @@ export async function markPurchaseOrderSent(
   _formData: FormData
 ): Promise<PurchaseOrderActionState> {
   await requirePermission(PERMISSIONS.PURCHASE_ORDERS_WRITE);
+
+  const po = await db.purchaseOrder.findUnique({ where: { id }, select: { status: true } });
+  if (!po) return { error: "Purchase order not found." };
+  // Without this, a stale page (e.g. a second tab still showing DRAFT after
+  // the order was already received/cancelled elsewhere) could regress an
+  // already-RECEIVED or CANCELLED order's status back to SENT.
+  if (po.status !== "DRAFT") {
+    return { error: "Only a draft purchase order can be marked as sent." };
+  }
+
   await db.purchaseOrder.update({ where: { id }, data: { status: "SENT" } });
   revalidatePath(`/purchase-orders/${id}`);
   return {};
@@ -112,6 +122,17 @@ export async function cancelPurchaseOrder(
   _formData: FormData
 ): Promise<PurchaseOrderActionState> {
   await requirePermission(PERMISSIONS.PURCHASE_ORDERS_WRITE);
+
+  const po = await db.purchaseOrder.findUnique({ where: { id }, select: { status: true } });
+  if (!po) return { error: "Purchase order not found." };
+  // Without this, a stale page could cancel an already-RECEIVED order —
+  // the order would show CANCELLED while the stock it received (and the
+  // InventoryTransaction rows tied to it) stay in place, silently
+  // contradicting its own status.
+  if (po.status !== "DRAFT" && po.status !== "SENT") {
+    return { error: "This purchase order has already been received or cancelled." };
+  }
+
   await db.purchaseOrder.update({ where: { id }, data: { status: "CANCELLED" } });
   revalidatePath(`/purchase-orders/${id}`);
   return {};
@@ -125,11 +146,22 @@ export async function deletePurchaseOrder(
   await requirePermission(PERMISSIONS.SYSTEM_DELETE);
 
   try {
-    await db.purchaseOrder.delete({ where: { id } });
+    // markPurchaseOrderReceived() creates InventoryTransaction rows tagged
+    // referenceType: "PurchaseOrder" — there's no DB-level FK/cascade for
+    // that loose reference (see deleteInventoryTransaction's guard), so
+    // without this explicit cleanup those rows would survive the PO,
+    // permanently stuck ("Can't delete — created by a PurchaseOrder") and
+    // leaving stock counts reflecting a PO that no longer exists. Same bug
+    // class as deleteProductionBatch, fixed the same way.
+    await db.$transaction([
+      db.inventoryTransaction.deleteMany({ where: { referenceType: "PurchaseOrder", referenceId: id } }),
+      db.purchaseOrder.delete({ where: { id } }),
+    ]);
   } catch {
     return { error: "Failed to delete purchase order." };
   }
 
   revalidatePath("/purchase-orders");
+  revalidatePath("/inventory");
   redirect("/purchase-orders");
 }

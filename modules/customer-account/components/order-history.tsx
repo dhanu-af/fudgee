@@ -64,9 +64,16 @@ export function OrderHistory({ orders }: { orders: Orders }) {
                 lines={order.lines.map((line) => ({
                   productId: line.productId,
                   name: line.product.name,
-                  sellPrice: line.product.sellPrice,
+                  // Prisma Decimal instances are class instances, not plain
+                  // objects — passing them straight into a Client Component
+                  // prop crashes RSC serialization ("Only plain objects...
+                  // can be passed to Client Components"), which surfaces to
+                  // the customer as a generic client-side exception. Convert
+                  // to plain numbers here, same as every other Decimal field
+                  // on this page (order.total, order.subtotal, etc.).
+                  sellPrice: line.product.sellPrice !== null ? Number(line.product.sellPrice) : null,
                   imageUrl: line.product.imageUrl,
-                  quantity: line.quantity,
+                  quantity: Number(line.quantity),
                 }))}
               />
             </div>

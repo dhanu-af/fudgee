@@ -63,6 +63,13 @@ export async function createSalesOrder(
       notes: parsed.data.notes || undefined,
       subtotal,
       total: subtotal,
+      // Without this, admin-created orders never got a gstAmount (only
+      // setDeliveryFee happened to set one) and were silently excluded from
+      // Finance's GST Summary (getGstSummary filters `gstAmount: { not: null }`)
+      // and showed no GST line on their printed invoice — even though they're
+      // counted as real revenue everywhere else. Matches the same
+      // GST-inclusive-price assumption used at storefront checkout.
+      gstAmount: gstComponent(subtotal),
       lines: { create: lines },
     },
   });
@@ -86,7 +93,14 @@ export async function confirmSalesOrder(
   _formData: FormData
 ): Promise<SalesOrderActionState> {
   await requirePermission(PERMISSIONS.SALES_ORDERS_WRITE);
-  await db.salesOrder.update({ where: { id }, data: { status: "CONFIRMED" } });
+  // updateMany + a status filter (rather than a plain update) so this can
+  // never re-confirm an order that's moved past DRAFT — matches the UI,
+  // which only shows this action while status is DRAFT.
+  const result = await db.salesOrder.updateMany({
+    where: { id, status: "DRAFT" },
+    data: { status: "CONFIRMED" },
+  });
+  if (result.count === 0) return { error: "This order is no longer in Draft — it may already be confirmed." };
   revalidatePath(`/sales-orders/${id}`);
   return {};
 }
@@ -102,6 +116,13 @@ export async function fulfillSalesOrder(
 
   const so = await db.salesOrder.findUnique({ where: { id }, include: { lines: true } });
   if (!so) return { error: "Sales order not found." };
+  // Without this, a double-click (or a resubmitted request before the page
+  // refreshes to hide the button) would issue stock a second time for the
+  // same order — mirrors the same guard on completeProductionBatch and
+  // dispatchShipment.
+  if (so.status !== "DRAFT" && so.status !== "CONFIRMED") {
+    return { error: "This order has already been fulfilled or cancelled." };
+  }
 
   const location = await db.location.findFirst({ where: { isActive: true } });
   if (!location) {
@@ -136,7 +157,20 @@ export async function cancelSalesOrder(
   _formData: FormData
 ): Promise<SalesOrderActionState> {
   await requirePermission(PERMISSIONS.SALES_ORDERS_WRITE);
-  await db.salesOrder.update({ where: { id }, data: { status: "CANCELLED" } });
+  // Restricted to DRAFT/CONFIRMED (matches the UI, which only shows this
+  // action for those two statuses) so a stale tab or resubmitted request
+  // can't cancel an order that's already been fulfilled or dispatched —
+  // stock would already be deducted and the sale already counted in
+  // Finance's revenue/GST reports, and CANCELLED orders are excluded from
+  // both, so cancelling at that point would silently erase a real,
+  // already-shipped sale from reporting without reversing anything it did.
+  const result = await db.salesOrder.updateMany({
+    where: { id, status: { in: ["DRAFT", "CONFIRMED"] } },
+    data: { status: "CANCELLED" },
+  });
+  if (result.count === 0) {
+    return { error: "This order can no longer be cancelled — it has already been fulfilled or shipped." };
+  }
   revalidatePath(`/sales-orders/${id}`);
   return {};
 }

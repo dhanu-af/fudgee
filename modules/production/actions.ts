@@ -60,6 +60,18 @@ export async function startProductionBatch(
   _formData: FormData
 ): Promise<ProductionBatchActionState> {
   await requirePermission(PERMISSIONS.PRODUCTION_WRITE);
+
+  const batch = await db.productionBatch.findUnique({ where: { id }, select: { status: true } });
+  if (!batch) return { error: "Production batch not found." };
+  // Without this, calling this action on a batch that's already IN_PROGRESS,
+  // COMPLETED, or CANCELLED (e.g. from a stale page, or a second tab) would
+  // reset startedAt and, worse, flip a COMPLETED/CANCELLED batch's status
+  // back to IN_PROGRESS — which would then let completeProductionBatch's own
+  // guard be bypassed, letting a batch be completed a second time.
+  if (batch.status !== "PLANNED") {
+    return { error: "This batch has already been started, completed, or cancelled." };
+  }
+
   await db.productionBatch.update({ where: { id }, data: { status: "IN_PROGRESS", startedAt: new Date() } });
   revalidatePath(`/production/${id}`);
   return {};
@@ -138,6 +150,19 @@ export async function cancelProductionBatch(
   _formData: FormData
 ): Promise<ProductionBatchActionState> {
   await requirePermission(PERMISSIONS.PRODUCTION_WRITE);
+
+  const batch = await db.productionBatch.findUnique({ where: { id }, select: { status: true } });
+  if (!batch) return { error: "Production batch not found." };
+  // A COMPLETED batch already has real InventoryTransaction rows (raw
+  // materials issued, finished goods received) and possibly quality checks —
+  // cancelling it without this guard would silently flip its status while
+  // leaving those stock movements in place, an inconsistent record that
+  // looks cancelled but still moved real inventory. Also guards against
+  // double-cancelling.
+  if (batch.status !== "PLANNED" && batch.status !== "IN_PROGRESS") {
+    return { error: "This batch has already been completed or cancelled." };
+  }
+
   await db.productionBatch.update({ where: { id }, data: { status: "CANCELLED" } });
   revalidatePath(`/production/${id}`);
   return {};

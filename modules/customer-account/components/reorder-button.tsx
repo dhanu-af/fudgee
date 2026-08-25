@@ -6,9 +6,9 @@ import { useCart } from "@/lib/storefront/cart-context";
 type ReorderLine = {
   productId: string;
   name: string;
-  sellPrice: unknown;
+  sellPrice: number | null;
   imageUrl: string | null;
-  quantity: unknown;
+  quantity: number;
 };
 
 export function ReorderButton({ lines }: { lines: ReorderLine[] }) {

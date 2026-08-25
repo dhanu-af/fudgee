@@ -5,6 +5,7 @@ import { can } from "@/lib/rbac/can";
 import { getStockLevels, getRecentTransactions } from "@/modules/inventory/queries";
 import { stockColumns } from "@/modules/inventory/components/stock-columns";
 import { TransactionTable } from "@/modules/inventory/components/transaction-table";
+import { DeleteAllStuckButton } from "@/modules/inventory/components/delete-all-stuck-button";
 import { DataTable } from "@/components/data-table/data-table";
 import { Button } from "@/components/ui/button";
 
@@ -25,7 +26,10 @@ export default async function InventoryPage() {
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Recent transactions</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Recent transactions</h2>
+          {can(session, PERMISSIONS.SYSTEM_DELETE) && <DeleteAllStuckButton />}
+        </div>
         <TransactionTable data={transactions} canDelete={can(session, PERMISSIONS.SYSTEM_DELETE)} />
       </div>
     </div>

@@ -88,3 +88,38 @@ export async function deleteInventoryTransaction(
   revalidatePath("/inventory");
   return {};
 }
+
+export type BulkDeleteState = { error?: string; message?: string };
+
+// Bulk version of the orphan check above: removes every transaction whose
+// referenceType is set but the record it points at is gone, in one pass.
+// Deliberately narrow — never touches a manual adjustment (no referenceType)
+// or a transaction whose source record still exists, so it can't silently
+// change stock math for anything still live.
+export async function deleteAllStuckInventoryTransactions(
+  _prev: BulkDeleteState,
+  _formData: FormData
+): Promise<BulkDeleteState> {
+  await requirePermission(PERMISSIONS.SYSTEM_DELETE);
+
+  const candidates = await db.inventoryTransaction.findMany({
+    where: { referenceType: { not: null } },
+    select: { id: true, referenceType: true, referenceId: true },
+  });
+
+  const idsToDelete: string[] = [];
+  for (const t of candidates) {
+    const check = t.referenceType ? REFERENCE_EXISTS_CHECK[t.referenceType] : undefined;
+    const stillExists = t.referenceId && check ? await check(t.referenceId) : false;
+    if (!stillExists) idsToDelete.push(t.id);
+  }
+
+  if (idsToDelete.length === 0) {
+    return { message: "Nothing to clean up — every entry is either a manual adjustment or still tied to a live record." };
+  }
+
+  await db.inventoryTransaction.deleteMany({ where: { id: { in: idsToDelete } } });
+
+  revalidatePath("/inventory");
+  return { message: `Removed ${idsToDelete.length} stuck ${idsToDelete.length === 1 ? "entry" : "entries"}.` };
+}

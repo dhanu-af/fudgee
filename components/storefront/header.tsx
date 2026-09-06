@@ -10,6 +10,7 @@ import logo from "@/public/logo.png";
 
 const NAV_LINKS = [
   { label: "Shop", href: "/shop" },
+  { label: "Build a Box", href: "/build-a-box" },
   { label: "Gallery", href: "/#gallery" },
   { label: "About", href: "/#about" },
   { label: "FAQ", href: "/#faq" },

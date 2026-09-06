@@ -46,6 +46,12 @@ export default async function ShopPage({
         <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--sf-fg)]">
           Our full range
         </h1>
+        <Link
+          href="/build-a-box"
+          className="mt-1 text-sm font-semibold text-[var(--sf-primary)] hover:underline"
+        >
+          Or, build your own box →
+        </Link>
       </div>
 
       <div className="mb-10 flex flex-wrap justify-center gap-2">

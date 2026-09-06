@@ -61,7 +61,7 @@ export function HeroSection({ heading, subheading, imageUrl, videoUrl, images = 
               Taste the Original
             </Link>
             <Link
-              href="/#featured"
+              href="/build-a-box"
               className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-card)] px-7 py-3.5 text-sm font-semibold text-[var(--sf-fg)] transition-colors hover:bg-[var(--sf-primary-soft)]"
             >
               Start Your Box

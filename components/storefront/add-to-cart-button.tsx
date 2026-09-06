@@ -15,12 +15,13 @@ export function AddToCartButton({
   price: number | null;
   imageUrl: string | null;
 }) {
-  const { addItem } = useCart();
+  const { addItem, openDrawer } = useCart();
   const [added, setAdded] = useState(false);
 
   function handleAdd() {
     if (price === null) return;
     addItem({ productId, name, price, imageUrl });
+    openDrawer();
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }

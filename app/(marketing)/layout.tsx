@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { CartProvider } from "@/lib/storefront/cart-context";
 import { StorefrontHeader } from "@/components/storefront/header";
 import { StorefrontFooter } from "@/components/storefront/footer";
+import { MiniCartDrawer } from "@/components/storefront/mini-cart-drawer";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getStorefrontSettings } from "@/modules/storefront/queries";
 import { getCustomerSession } from "@/lib/customer-auth";
@@ -63,6 +64,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
         <StorefrontHeader customerName={customer?.name} />
         <main className="flex-1">{children}</main>
         <StorefrontFooter settings={settings} />
+        <MiniCartDrawer />
       </CartProvider>
     </div>
   );

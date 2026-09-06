@@ -22,13 +22,14 @@ const PLACEHOLDER_GRADIENTS = [
 ];
 
 export function ProductCard({ product, index = 0 }: { product: StorefrontProduct; index?: number }) {
-  const { addItem } = useCart();
+  const { addItem, openDrawer } = useCart();
   const [added, setAdded] = useState(false);
   const price = product.sellPrice !== null ? Number(product.sellPrice) : null;
 
   function handleAdd() {
     if (price === null) return;
     addItem({ productId: product.id, name: product.name, price, imageUrl: product.imageUrl });
+    openDrawer();
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }

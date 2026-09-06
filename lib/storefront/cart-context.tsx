@@ -20,6 +20,14 @@ type CartContextValue = {
   subtotal: number;
   gst: number;
   count: number;
+  // Mini-cart slide-in — a caller opts in by calling openDrawer() itself
+  // after addItem() (see ProductCard) rather than addItem opening it
+  // automatically, since some flows (Build Your Box) add several lines at
+  // once and then navigate straight to /cart, where a drawer would just be
+  // in the way.
+  isDrawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -29,6 +37,7 @@ const STORAGE_KEY = "fudgee-storefront-cart";
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -73,12 +82,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   }
 
+  function openDrawer() {
+    setIsDrawerOpen(true);
+  }
+
+  function closeDrawer() {
+    setIsDrawerOpen(false);
+  }
+
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const gst = gstComponent(subtotal);
   const count = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, updateQuantity, removeItem, clear, subtotal, gst, count }}>
+    <CartContext.Provider
+      value={{
+        items,
+        addItem,
+        updateQuantity,
+        removeItem,
+        clear,
+        subtotal,
+        gst,
+        count,
+        isDrawerOpen,
+        openDrawer,
+        closeDrawer,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

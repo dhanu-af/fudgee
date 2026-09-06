@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getStorefrontHomepageData } from "@/modules/storefront/queries";
 import { HeroSection } from "@/components/storefront/hero-section";
+import { TrustBar } from "@/components/storefront/trust-bar";
 import { PromotionsSection } from "@/components/storefront/promotions-section";
 import { NewsSection } from "@/components/storefront/news-section";
 import { CategoriesSection } from "@/components/storefront/categories-section";
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StorefrontHomePage() {
-  const { settings, promotions, newsItems, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems } =
+  const { settings, promotions, newsItems, trustStats, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems } =
     await getStorefrontHomepageData();
 
   const shopableCategories = categories.map((c) => ({
@@ -59,6 +60,11 @@ export default async function StorefrontHomePage() {
         imageUrl={settings?.heroImageUrl ?? null}
         videoUrl={settings?.heroVideoUrl ?? null}
         images={heroImages}
+      />
+      <TrustBar
+        orderCount={trustStats.orderCount}
+        avgRating={trustStats.avgRating}
+        reviewCount={trustStats.reviewCount}
       />
       <PromotionsSection promotions={promotions} />
       <NewsSection items={newsItems} />

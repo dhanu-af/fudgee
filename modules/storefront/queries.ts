@@ -180,17 +180,30 @@ export function getActiveDiscountPromotions() {
   });
 }
 
+// Real numbers for the homepage trust bar — never a hardcoded "500+", since
+// that would silently go stale as more orders ship. "Delivered" is read as
+// any order that actually progressed through fulfillment (excludes
+// DRAFT/CONFIRMED, which haven't shipped yet, and CANCELLED).
+export async function getTrustStats() {
+  const [orderCount, ratingAgg] = await Promise.all([
+    db.salesOrder.count({ where: { status: { in: ["PACKED", "DISPATCHED", "DELIVERED", "FULFILLED"] } } }),
+    db.review.aggregate({ where: { isActive: true }, _avg: { rating: true }, _count: { rating: true } }),
+  ]);
+  return { orderCount, avgRating: ratingAgg._avg.rating, reviewCount: ratingAgg._count.rating };
+}
+
 // --- Public homepage read (unauthenticated) ---
 // A single aggregate query for the whole page — every list is scoped to
 // isActive/in-stock so draft/inactive admin content never reaches the
 // public site.
 
 export async function getStorefrontHomepageData() {
-  const [settings, promotions, newsItems, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems] =
+  const [settings, promotions, newsItems, trustStats, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems] =
     await Promise.all([
       getStorefrontSettings(),
       getActivePromotions(),
       getActiveNewsItems(),
+      getTrustStats(),
       db.category.findMany({
         where: { isActive: true },
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -222,7 +235,7 @@ export async function getStorefrontHomepageData() {
       db.faqItem.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
     ]);
 
-  return { settings, promotions, newsItems, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems };
+  return { settings, promotions, newsItems, trustStats, categories, featuredProducts, bestSellerProducts, galleryItems, heroImages, reviews, faqItems };
 }
 
 // Every purchasable product (for the shop/cart), grouped implicitly by

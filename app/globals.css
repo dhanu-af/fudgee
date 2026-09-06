@@ -162,23 +162,21 @@
    preference, since a bakery storefront isn't meant to follow that toggle. */
 .storefront,
 .dark .storefront {
-  /* Premium "Cocoa / Marble / Caramel" palette — replaces the previous
-     lavender primary (oklch H=300) with a warm caramel that actually reads
-     as fudge/chocolate-adjacent, and warms the text color from a cool
-     dark grey to cocoa brown. See the Fudgee Design System doc for the
-     full token rationale. */
-  --sf-bg: oklch(0.97 0.014 75);
-  --sf-bg-alt: oklch(0.94 0.02 70);
-  --sf-fg: oklch(0.26 0.045 45);
-  --sf-muted: oklch(0.46 0.035 50);
-  --sf-card: oklch(0.995 0.006 75);
-  --sf-border: oklch(0.89 0.025 65);
-  --sf-primary: oklch(0.62 0.16 50);
-  --sf-primary-foreground: oklch(0.98 0.01 75);
-  --sf-primary-soft: oklch(0.94 0.05 55);
-  --sf-accent: oklch(0.72 0.15 55);
-  --sf-accent-foreground: oklch(0.22 0.05 45);
-  --sf-accent-soft: oklch(0.94 0.04 55);
+  /* Reverted to the original purple theme per explicit customer/owner
+     feedback — the caramel retint tried earlier this session wasn't
+     wanted, purple is the deliberate brand colour. */
+  --sf-bg: oklch(0.98 0.014 80);
+  --sf-bg-alt: oklch(0.955 0.02 75);
+  --sf-fg: oklch(0.28 0.05 30);
+  --sf-muted: oklch(0.48 0.03 30);
+  --sf-card: oklch(1 0 0);
+  --sf-border: oklch(0.9 0.03 70);
+  --sf-primary: oklch(0.62 0.13 300);
+  --sf-primary-foreground: oklch(0.99 0.01 300);
+  --sf-primary-soft: oklch(0.93 0.045 300);
+  --sf-accent: oklch(0.78 0.15 55);
+  --sf-accent-foreground: oklch(0.28 0.08 45);
+  --sf-accent-soft: oklch(0.94 0.06 55);
 
   background: var(--sf-bg);
   color: var(--sf-fg);

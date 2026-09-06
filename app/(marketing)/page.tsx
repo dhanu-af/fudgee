@@ -26,17 +26,17 @@ export const metadata: Metadata = {
   // get wrapped by the layout's "%s | Fudgee" template, duplicating the
   // brand name.
   description:
-    "Small-batch, handcrafted fudge and confections made with real cream and real butter. Shop our full range and order online for delivery.",
+    "Handcrafted, small-batch fudge cookies made on the Gold Coast with real cream, real butter and real chocolate. Order Australia's original fudge cookie online.",
   alternates: { canonical: SITE_URL },
   openGraph: {
-    title: "Fudgee — Handcrafted Fudge & Confections",
-    description: "Small-batch, handcrafted fudge and confections made with real cream and real butter.",
+    title: "The World's First Fudge Cookie — Fudgee",
+    description: "Handcrafted, small-batch fudge cookies made on the Gold Coast with real cream, real butter and real chocolate.",
     url: SITE_URL,
     type: "website",
   },
   twitter: {
-    title: "Fudgee — Handcrafted Fudge & Confections",
-    description: "Small-batch, handcrafted fudge and confections made with real cream and real butter.",
+    title: "The World's First Fudge Cookie — Fudgee",
+    description: "Handcrafted, small-batch fudge cookies made on the Gold Coast with real cream, real butter and real chocolate.",
   },
 };
 

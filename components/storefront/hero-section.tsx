@@ -47,24 +47,24 @@ export function HeroSection({ heading, subheading, imageUrl, videoUrl, images = 
             Small-batch &amp; handcrafted
           </span>
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-[var(--sf-fg)] sm:text-5xl lg:text-6xl">
-            {heading || "Handcrafted fudge, made with love"}
+            {heading || "The World's First Fudge Cookie"}
           </h1>
           <p className="max-w-md text-lg text-[var(--sf-muted)]">
             {subheading ||
-              "Every batch is made by hand in small quantities, using real cream, real butter, and no shortcuts — a little luxury, delivered to your door."}
+              "Dense, hand-cut fudge, baked into a cookie you can actually hold — finished with a drizzle we refuse to be modest about. Real cream. Real butter. Real chocolate."}
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
               href="/shop"
               className="rounded-full bg-[var(--sf-primary)] px-7 py-3.5 text-sm font-semibold text-[var(--sf-primary-foreground)] shadow-md shadow-[var(--sf-primary)]/20 transition-transform hover:scale-105"
             >
-              Shop Now
+              Taste the Original
             </Link>
             <Link
               href="/#featured"
               className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-card)] px-7 py-3.5 text-sm font-semibold text-[var(--sf-fg)] transition-colors hover:bg-[var(--sf-primary-soft)]"
             >
-              Order Now
+              Start Your Box
             </Link>
           </div>
         </motion.div>

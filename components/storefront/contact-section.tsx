@@ -120,7 +120,7 @@ export function ContactSection({ settings }: { settings: StorefrontSettings }) {
               disabled={pending}
               className="mt-1 rounded-full bg-[var(--sf-primary)] px-6 py-3 text-sm font-semibold text-[var(--sf-primary-foreground)] transition-transform hover:scale-105 disabled:opacity-60"
             >
-              {pending ? "Sending..." : "Send message"}
+              {pending ? "Sending..." : "Send It Our Way"}
             </button>
           </form>
         </Reveal>

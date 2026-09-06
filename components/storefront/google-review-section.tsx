@@ -50,7 +50,7 @@ export function GoogleReviewSection({ url }: { url: string | null }) {
             className="mt-2 flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--sf-primary)] px-8 py-3.5 text-base font-semibold text-[var(--sf-primary-foreground)] shadow-md transition-transform hover:scale-105"
           >
             <GoogleIcon className="size-5" />
-            Post a Google Review
+            Tell the World
           </a>
         </Reveal>
       </div>

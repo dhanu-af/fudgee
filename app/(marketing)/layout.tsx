@@ -1,4 +1,4 @@
-import { Fredoka } from "next/font/google";
+import { Fraunces } from "next/font/google";
 import type { Metadata } from "next";
 import { CartProvider } from "@/lib/storefront/cart-context";
 import { StorefrontHeader } from "@/components/storefront/header";
@@ -9,10 +9,10 @@ import { getCustomerSession } from "@/lib/customer-auth";
 import { SITE_URL, SITE_NAME } from "@/lib/site-config";
 import { AnnouncementBanner } from "@/components/announcement-banner";
 
-const fredoka = Fredoka({ variable: "--font-fredoka", subsets: ["latin"], weight: ["500", "600", "700"] });
+const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], weight: ["500", "600", "700"] });
 
 const DEFAULT_DESCRIPTION =
-  "Small-batch, handcrafted fudge and confections made with real cream and real butter. Shop online for Australia-wide delivery.";
+  "Handcrafted, small-batch fudge cookies made on the Gold Coast with real cream, real butter and real chocolate. Order online.";
 
 // Site-wide defaults for every storefront page — individual pages (home,
 // shop, product detail, etc.) override title/description/openGraph as
@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getStorefrontSettings();
 
   return {
-    title: { default: `${SITE_NAME} — Handcrafted Fudge & Confections`, template: `%s | ${SITE_NAME}` },
+    title: { default: `Premium Fudge Cookies Australia | ${SITE_NAME}`, template: `%s | ${SITE_NAME}` },
     description: DEFAULT_DESCRIPTION,
     openGraph: {
       siteName: SITE_NAME,
@@ -56,7 +56,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
   };
 
   return (
-    <div className={`storefront ${fredoka.variable} flex min-h-screen flex-col`}>
+    <div className={`storefront ${fraunces.variable} flex min-h-screen flex-col`}>
       <JsonLd data={organizationJsonLd} />
       <AnnouncementBanner />
       <CartProvider>

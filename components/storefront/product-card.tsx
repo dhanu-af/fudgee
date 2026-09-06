@@ -81,7 +81,7 @@ export function ProductCard({ product, index = 0 }: { product: StorefrontProduct
             className="flex items-center gap-1.5 rounded-full bg-[var(--sf-primary)] px-4 py-2 text-sm font-semibold text-[var(--sf-primary-foreground)] transition-transform hover:scale-105 disabled:opacity-50"
           >
             {added ? <Check className="size-4" /> : <ShoppingBag className="size-4" />}
-            {added ? "Added" : "Add"}
+            {added ? "Added" : "Add to Box"}
           </button>
         </div>
       </div>

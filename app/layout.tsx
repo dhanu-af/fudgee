@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { Inter, Fredoka } from "next/font/google";
+import { Karla, Fraunces } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SITE_URL } from "@/lib/site-config";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const karla = Karla({
+  variable: "--font-karla",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const fredoka = Fredoka({
-  variable: "--font-fredoka",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
 });
@@ -32,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${fredoka.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${karla.variable} ${fraunces.variable}`}>
       <body className="antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}

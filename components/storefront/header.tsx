@@ -21,10 +21,10 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-gradient-to-r from-[#663e9e] via-[var(--sf-primary)] to-[#7d5cb8] shadow-lg shadow-black/10 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-[var(--sf-border)] bg-[var(--sf-card)]/95 shadow-sm backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
         <Link href="/" className="flex items-center">
-          <Image src={logo} alt="fudgee." priority className="h-9 w-auto drop-shadow-sm sm:h-11" />
+          <Image src={logo} alt="fudgee." priority className="h-9 w-auto sm:h-11" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -32,7 +32,7 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-full px-4 py-2 text-sm font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-full px-4 py-2 text-sm font-medium text-[var(--sf-muted)] transition-colors hover:bg-[var(--sf-bg-alt)] hover:text-[var(--sf-fg)]"
             >
               {link.label}
             </Link>
@@ -43,11 +43,11 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
           <Link
             href="/cart"
             aria-label={`Cart, ${count} item${count === 1 ? "" : "s"}`}
-            className="relative flex size-9 items-center justify-center rounded-full text-white transition-colors hover:bg-white/15"
+            className="relative flex size-9 items-center justify-center rounded-full text-[var(--sf-fg)] transition-colors hover:bg-[var(--sf-bg-alt)]"
           >
             <ShoppingBag className="size-5" />
             {count > 0 && (
-              <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[var(--sf-accent)] text-[10px] font-bold text-[var(--sf-accent-foreground)] shadow-sm">
+              <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[var(--sf-primary)] text-[10px] font-bold text-[var(--sf-primary-foreground)] shadow-sm">
                 {count > 9 ? "9+" : count}
               </span>
             )}
@@ -56,16 +56,16 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
             <div className="hidden items-center gap-3 sm:flex">
               <Link
                 href="/account"
-                className="text-sm font-semibold text-white/85 transition-colors hover:text-white"
+                className="text-sm font-semibold text-[var(--sf-fg)] transition-colors hover:text-[var(--sf-primary)]"
               >
                 {customerName.split(" ")[0]}
               </Link>
-              <SignOutButton className="text-sm font-semibold text-white/85 hover:text-white" />
+              <SignOutButton className="text-sm font-semibold text-[var(--sf-muted)] hover:text-[var(--sf-fg)]" />
             </div>
           ) : (
             <Link
               href="/account/login"
-              className="hidden rounded-full bg-[var(--sf-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--sf-primary)] shadow-md shadow-black/15 ring-1 ring-white/40 transition-all hover:scale-105 hover:shadow-lg sm:inline-block"
+              className="hidden rounded-full bg-[var(--sf-primary)] px-5 py-2.5 text-sm font-semibold text-[var(--sf-primary-foreground)] shadow-sm transition-transform hover:scale-105 sm:inline-block"
             >
               Sign In
             </Link>
@@ -75,7 +75,7 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
             aria-label="Toggle menu"
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
-            className="flex size-9 items-center justify-center rounded-full text-white hover:bg-white/15 md:hidden"
+            className="flex size-9 items-center justify-center rounded-full text-[var(--sf-fg)] hover:bg-[var(--sf-bg-alt)] md:hidden"
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
@@ -83,13 +83,13 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
       </div>
 
       {open && (
-        <nav className="flex flex-col gap-1 border-t border-white/15 px-5 py-3 md:hidden">
+        <nav className="flex flex-col gap-1 border-t border-[var(--sf-border)] px-5 py-3 md:hidden">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-white hover:bg-white/15"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--sf-fg)] hover:bg-[var(--sf-bg-alt)]"
             >
               {link.label}
             </Link>
@@ -99,19 +99,19 @@ export function StorefrontHeader({ customerName }: { customerName?: string | nul
               <Link
                 href="/account"
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-white hover:bg-white/15"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--sf-fg)] hover:bg-[var(--sf-bg-alt)]"
               >
                 My Account
               </Link>
               <div className="px-3 py-2">
-                <SignOutButton className="text-sm font-semibold text-white/85 hover:text-white" />
+                <SignOutButton className="text-sm font-semibold text-[var(--sf-muted)] hover:text-[var(--sf-fg)]" />
               </div>
             </>
           ) : (
             <Link
               href="/account/login"
               onClick={() => setOpen(false)}
-              className="mt-1 rounded-full bg-[var(--sf-bg)] px-4 py-2 text-center text-sm font-semibold text-[var(--sf-primary)]"
+              className="mt-1 rounded-full bg-[var(--sf-primary)] px-4 py-2 text-center text-sm font-semibold text-[var(--sf-primary-foreground)]"
             >
               Sign In
             </Link>

@@ -162,18 +162,22 @@
    preference, since a bakery storefront isn't meant to follow that toggle. */
 .storefront,
 .dark .storefront {
-  /* Reverted to the original purple theme per explicit customer/owner
-     feedback — the caramel retint tried earlier this session wasn't
-     wanted, purple is the deliberate brand colour. */
+  /* Official brand colour update: "Wisteria" #c69fd5, given as an exact hex
+     by the owner (with a new script logo on this same colour), replacing
+     the earlier approximate purple. --sf-primary-foreground is a dark plum
+     rather than white/cream — Wisteria is a light pastel (relative
+     luminance ~0.41), so white text on it fails WCAG AA contrast
+     (~2.3:1); the brand mark itself uses cream-on-Wisteria, but that's a
+     decorative logo treatment, not a rule for button/nav text. */
   --sf-bg: oklch(0.98 0.014 80);
   --sf-bg-alt: oklch(0.955 0.02 75);
   --sf-fg: oklch(0.28 0.05 30);
   --sf-muted: oklch(0.48 0.03 30);
   --sf-card: oklch(1 0 0);
   --sf-border: oklch(0.9 0.03 70);
-  --sf-primary: oklch(0.62 0.13 300);
-  --sf-primary-foreground: oklch(0.99 0.01 300);
-  --sf-primary-soft: oklch(0.93 0.045 300);
+  --sf-primary: #c69fd5;
+  --sf-primary-foreground: oklch(0.24 0.07 320);
+  --sf-primary-soft: oklch(0.95 0.025 320);
   --sf-accent: oklch(0.78 0.15 55);
   --sf-accent-foreground: oklch(0.28 0.08 45);
   --sf-accent-soft: oklch(0.94 0.06 55);

@@ -1,7 +1,8 @@
 import NextAuth from "next-auth";
+import { NextResponse } from "next/server";
 import authConfig from "@/lib/auth.config";
 import { MODULE_REGISTRY } from "@/lib/registry/modules";
-import { SITE_URL, ADMIN_URL, ADMIN_HOST } from "@/lib/site-config";
+import { SITE_URL, ADMIN_URL, ADMIN_HOST, STOREFRONT_CLOSED } from "@/lib/site-config";
 
 const { auth } = NextAuth(authConfig);
 
@@ -9,6 +10,8 @@ const DASHBOARD_PREFIXES = ["/dashboard", ...MODULE_REGISTRY.map((m) => m.route)
 // Staff-only utility pages that sit outside the module registry but must
 // still only ever live on the admin subdomain.
 const STAFF_UTILITY_PATHS = ["/login", "/change-password", "/unauthorized", "/error"];
+
+const ALWAYS_OPEN_PATHS = ["/robots.txt", "/sitemap.xml"];
 
 function isStaffPath(pathname: string) {
   if (STAFF_UTILITY_PATHS.includes(pathname)) return true;
@@ -33,6 +36,19 @@ export default auth((req) => {
     }
   } else if (isStaffPath(pathname)) {
     return Response.redirect(new URL(pathname + search, ADMIN_URL));
+  }
+
+  // Temporary closure — only ever the shopper-facing host (staff paths were
+  // already redirected away above, the admin host is skipped here). 503 +
+  // Retry-After tells search engines it's a pause, not a removal, so rankings
+  // survive; no-store keeps browsers/CDN from holding the closed page after
+  // reopening. robots/sitemap stay readable on purpose: a 5xx robots.txt makes
+  // Google stop crawling the whole site, which is worse than a paused one.
+  if (STOREFRONT_CLOSED && !isAdminHost && !ALWAYS_OPEN_PATHS.includes(pathname)) {
+    return NextResponse.rewrite(new URL("/maintenance", req.nextUrl), {
+      status: 503,
+      headers: { "Retry-After": "3600", "Cache-Control": "no-store" },
+    });
   }
 
   if (isStaffPath(pathname) && pathname !== "/login" && !req.auth) {

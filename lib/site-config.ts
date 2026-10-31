@@ -10,6 +10,14 @@ export const SITE_NAME = "Fudgee";
 export const ADMIN_URL = "https://admin.fudgee.au";
 export const ADMIN_HOST = "admin.fudgee.au";
 
+// Temporary closure of the PUBLIC storefront ("we're taking a short break").
+// While true, middleware.ts answers every shopper-facing page request with a
+// 503 + Retry-After rendering /maintenance, so no new orders can be placed —
+// but the admin subdomain, /api (Stripe webhook, auth) and robots/sitemap stay
+// up, so staff keep working and payments already in flight still land.
+// Flip to false and push to reopen.
+export const STOREFRONT_CLOSED = true;
+
 // Single global switch for the temporary site-update announcement banner.
 // Flip to false to remove it everywhere without touching any other file.
 export const SHOW_ANNOUNCEMENT_BANNER = false;
